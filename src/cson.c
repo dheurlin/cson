@@ -43,7 +43,6 @@ typedef struct {
   int input_pos;
   Token tokens[MAX_NUM_TOKENS];
   int token_pos;
-  int num_tokens;
 } LexerState;
 
 char isDigit(char n) {
@@ -85,33 +84,27 @@ void lexNumber(LexerState *state) {
   int length = input_end - input;
 
   state->input_pos += length;
-  state->token_pos = state->token_pos + 1;
-  Token token = state->tokens[state->token_pos++];
-  token.tokenType = TOKEN_NUMBER_LITERAL;
-  token.contents.number = res;
-
-  printToken(&token);
+  Token *token = &state->tokens[state->token_pos++];
+  token->tokenType = TOKEN_NUMBER_LITERAL;
+  token->contents.number = res;
 }
 
 void lexString(LexerState *state) {
   next(state); // skip initial "
  
-  Token token = state->tokens[state->token_pos++];
-  token.tokenType = TOKEN_STRING_LITERAL;
+  Token *token = &state->tokens[state->token_pos++];
+  token->tokenType = TOKEN_STRING_LITERAL;
 
   int index = 0;
   char next_char;
   while ((next_char = next(state)) != '"' && !eof(state)) {
-    token.contents.str[index++] = next_char;
+    token->contents.str[index++] = next_char;
   }
-  token.contents.str[index++] = '\0';
+  token->contents.str[index++] = '\0';
 
   if (eof(state)) {
     DIE("Expected '\"' at position %d, got EOF\n", state->input_pos);
   }
-
-  state->token_pos = state->token_pos + 1;
-  printToken(&token);
 }
 
 void lex(LexerState *state) {
@@ -164,6 +157,10 @@ int main(int argc, char *argv[]) {
   };
 
   lex(&state);
+
+  for (int i = 0; i < state.token_pos; i++) {
+    printToken(&(state.tokens[i]));
+  }
 
   fclose(fp);
 }
