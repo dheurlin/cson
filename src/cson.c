@@ -11,6 +11,14 @@
 typedef enum {
   TOKEN_STRING_LITERAL,
   TOKEN_NUMBER_LITERAL,
+  TOKEN_BOOL_LITERAL,
+  TOKEN_NULL_LITERAL,
+  TOKEN_OPEN_CURLY,
+  TOKEN_CLOSE_CURLY,
+  TOKEN_OPEN_SQUARE,
+  TOKEN_CLOSE_SQUARE,
+  TOKEN_COMMA,
+  TOKEN_COLON,
 } TokenType;
 
 typedef struct {
@@ -31,8 +39,36 @@ void printToken(Token *token) {
       printf("stringLiteral(\"%s\")\n", token->contents.str);
       break;
 
-    default:
-      DIE("printtoken: unhandled token type %d\n", token->tokenType);
+    case TOKEN_BOOL_LITERAL:
+      printf("boolLiteral(%s)\n", token->contents.str);
+      break;
+
+    case TOKEN_NULL_LITERAL:
+      printf("nullLiteral(null)\n");
+      break;
+
+    case TOKEN_OPEN_CURLY:
+      printf("openCurly( { )\n");
+      break;
+
+    case TOKEN_CLOSE_CURLY:
+      printf("closeCurly( } )\n");
+      break;
+
+    case TOKEN_OPEN_SQUARE:
+      printf("openSquare( [ )\n");
+      break;
+
+    case TOKEN_CLOSE_SQUARE:
+      printf("closeSquare( ] )\n");
+      break;
+
+    case TOKEN_COMMA:
+      printf("comma( , )\n");
+      break;
+
+    case TOKEN_COLON:
+      printf("colon( : )\n");
       break;
   }
 }
@@ -76,6 +112,12 @@ void skipWhitespace(LexerState *state) {
   }
 }
 
+void lexSingleChar(LexerState *state, TokenType type) {
+  next(state);
+  Token *token = &state->tokens[state->token_pos++];
+  token->tokenType = type;
+}
+
 void lexNumber(LexerState *state) {
   char *input = &state->input[state->input_pos];
   char *input_end = input;
@@ -117,6 +159,18 @@ void lex(LexerState *state) {
       lexNumber(state);
     } else if (next == '"') {
       lexString(state);
+    } else if (next == '{') {
+      lexSingleChar(state, TOKEN_OPEN_CURLY);
+    } else if (next == '}') {
+      lexSingleChar(state, TOKEN_CLOSE_CURLY);
+    } else if (next == '[') {
+      lexSingleChar(state, TOKEN_OPEN_SQUARE);
+    } else if (next == ']') {
+      lexSingleChar(state, TOKEN_CLOSE_SQUARE);
+    } else if (next == ',') {
+      lexSingleChar(state, TOKEN_COMMA);
+    } else if (next == ':') {
+      lexSingleChar(state, TOKEN_COLON);
     } else if (eof(state)) {
       return;
     } else {

@@ -1,0 +1,7 @@
+{
+  "hello": "world",
+  "number": 123,
+  "list": [
+    1, 2, 3, { "hello": "world" }, "hello"
+  ]
+}
