@@ -1,5 +1,7 @@
 [
   true,
   false,
-  null
+  null,
+  -123,
+  "what",
 ]

@@ -178,7 +178,7 @@ void lex(LexerState *state) {
     skipWhitespace(state);
     char next = peek(state);
 
-    if (isDigit(next)) {
+    if (isDigit(next) || next == '-' || next == '+') {
       lexNumber(state);
     } else if (next == '"') {
       lexString(state);
