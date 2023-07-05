@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAXBUFLEN 1000000
 
@@ -112,6 +113,29 @@ void skipWhitespace(LexerState *state) {
   }
 }
 
+void lexWord(LexerState *state, char *word, TokenType type) {
+  long len = strlen(word);
+  char localStr[len + 1];
+  char next;
+  for (int i = 0; i < len; i++) {
+    next = state->input[state->input_pos + i];
+    if (state->input_pos >= state->input_length || next == '\0') {
+      DIE("Expected \"%s\" at position %d\n", word, state->input_pos);
+    }
+    localStr[i] = next;
+  }
+  localStr[len] = '\0';
+
+  if (strcmp(localStr, word) != 0) {
+    DIE("Expected \"%s\" at position %d\n", word, state->input_pos);
+  }
+
+  Token *token = &state->tokens[state->token_pos++];
+  token->tokenType = type;
+  strcpy(token->contents.str, localStr);
+  state->input_pos += len;
+}
+
 void lexSingleChar(LexerState *state, TokenType type) {
   next(state);
   Token *token = &state->tokens[state->token_pos++];
@@ -153,12 +177,17 @@ void lex(LexerState *state) {
   while (!eof(state)) {
     skipWhitespace(state);
     char next = peek(state);
-    printf("Peeked: %c\n", next);
 
     if (isDigit(next)) {
       lexNumber(state);
     } else if (next == '"') {
       lexString(state);
+    } else if (next == 't') {
+      lexWord(state, "true", TOKEN_BOOL_LITERAL);
+    } else if (next == 'f') {
+      lexWord(state, "false", TOKEN_BOOL_LITERAL);
+    } else if (next == 'n') {
+      lexWord(state, "null", TOKEN_NULL_LITERAL);
     } else if (next == '{') {
       lexSingleChar(state, TOKEN_OPEN_CURLY);
     } else if (next == '}') {
