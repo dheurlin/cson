@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "lexer.h"
+#include "parser.h"
 
 size_t read_whole_file(FILE* fp, char *filename, char *dest) {
   if (fp == NULL) {
@@ -36,9 +37,9 @@ int main(int argc, char *argv[]) {
 
   lex(&state);
 
-  for (int i = 0; i < state.token_pos; i++) {
-    printToken(&(state.tokens[i]));
-  }
+  JSONNode *parsed = parse(state.tokens);
+  printTree(parsed);
 
+  JSONNode_free(parsed);
   fclose(fp);
 }

@@ -7,7 +7,9 @@ include_directories(include)
 set(SOURCES
   src/cson.c
   src/lexer.c
+  src/parser.c
   include/lexer.h
+  include/parser.h
 )
 
 add_executable(cson ${SOURCES})
