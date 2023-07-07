@@ -5,6 +5,7 @@
 
 #include "lexer.h"
 
+struct NodeList;
 typedef struct JSONNode JSONNode;
 
 struct JSONNode {
@@ -17,18 +18,12 @@ struct JSONNode {
     JSON_LIST,
   } tag;
   union {
-    struct JSON_NUMBER { double number; } JSON_NUMBER;
-    struct JSON_STRING { char *string;  } JSON_STRING;
-    struct JSON_BOOL   { bool boolean;  } JSON_BOOL;
-    struct JSON_NULL   {                } JSON_NULL;
-    struct JSON_OBJECT {
-      char *name;
-      JSONNode *value;
-    } JSON_OBJECT;
-    struct JSON_LIST {
-      int length;
-      JSONNode *items;
-    } JSON_LIST;
+    struct JSON_NUMBER { double number;          } JSON_NUMBER;
+    struct JSON_STRING { char *string;           } JSON_STRING;
+    struct JSON_BOOL   { bool boolean;           } JSON_BOOL;
+    struct JSON_NULL   {                         } JSON_NULL;
+    struct JSON_OBJECT { struct NodeList *nodes; } JSON_OBJECT;
+    struct JSON_LIST   { JSONNode *firstElem;    } JSON_LIST;
   } data;
 };
 
