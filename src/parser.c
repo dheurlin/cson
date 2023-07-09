@@ -82,12 +82,20 @@ bool eof(ParserState *state) {
 
 #define nextIsClosingBrace(state) (state->current_token->tokenType == TOKEN_CLOSE_SQUARE)
 
-void parseList(ParserState *state) {
-  // consume opening brace
-  if (state->current_token->tokenType != TOKEN_OPEN_SQUARE) {
-    DIE("parseList: expecting [\n");
+TokenType peekToken(ParserState *state) {
+  return state->current_token->tokenType;
+}
+
+void consume(ParserState *state, TokenType type) {
+  if (eof(state) || peekToken(state) != type) {
+    printf("Expecting "); printTokenType(type); printf("\n");
+    DIE("aborting\n");
   }
   state->current_token++;
+}
+
+void parseList(ParserState *state) {
+  consume(state, TOKEN_OPEN_SQUARE);
 
   JSONNode *node = state->current_node;
   NodeList *nodeList = NodeList_new();
@@ -99,19 +107,14 @@ void parseList(ParserState *state) {
     state->current_node = elem;
     _parse(state);
 
-    if (state->current_token->tokenType == TOKEN_CLOSE_SQUARE) {
+    if (peekToken(state) == TOKEN_CLOSE_SQUARE || eof(state)) {
       break;
     }
-    if (state->current_token->tokenType != TOKEN_COMMA) {
-      printf("Expected JSON object, comma or closing bracket, got "); printTokenLn(state->current_token);
-    }
-    state->current_token++;
-  }
-  if (eof(state) || state->current_token->tokenType != TOKEN_CLOSE_SQUARE) {
-    DIE("parseList: expecting [\n");
+    // This allows a trailing comma, could be fixed but why not keep it?
+    consume(state, TOKEN_COMMA);
   }
 
-  state->current_token++;
+  consume(state, TOKEN_CLOSE_SQUARE);
   state->current_node = node;
 }
 

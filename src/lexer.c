@@ -4,6 +4,50 @@
 
 #include "lexer.h"
 
+void printTokenType(TokenType type) {
+  switch (type) {
+    case TOKEN_NUMBER_LITERAL:
+      printf("Number literal");
+      break;
+
+    case TOKEN_NULL_LITERAL:
+      printf("Null literal");
+      break;
+
+    case TOKEN_BOOL_LITERAL:
+      printf("Boolean literal");
+      break;
+
+    case TOKEN_STRING_LITERAL:
+      printf("String literal");
+      break;
+
+    case TOKEN_COLON:
+      printf(":");
+      break;
+
+    case TOKEN_COMMA:
+      printf(",");
+      break;
+
+    case TOKEN_OPEN_SQUARE:
+      printf("[");
+      break;
+
+    case TOKEN_CLOSE_SQUARE:
+      printf("]");
+      break;
+
+    case TOKEN_OPEN_CURLY:
+      printf("{");
+      break;
+
+    case TOKEN_CLOSE_CURLY:
+      printf("}");
+      break;
+  }
+}
+
 void printToken(Token *token) {
   switch (token->tokenType) {
     case TOKEN_NUMBER_LITERAL:
