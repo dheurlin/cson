@@ -11,6 +11,7 @@ void parseBool(ParserState *state);
 void parseNumber(ParserState *state);
 void parseString(ParserState *state);
 void parseList(ParserState *state);
+void parseObject(ParserState *state);
 
 JSONNode *parse(Token *tokens, int length) {
   JSONNode *root = malloc(sizeof(JSONNode));
@@ -37,9 +38,10 @@ void _parse(ParserState *state) {
     parseBool(state);
   } else if (next.tokenType == TOKEN_OPEN_SQUARE) {
     parseList(state);
+  } else if (next.tokenType == TOKEN_OPEN_CURLY) {
+    parseObject(state);
   } else {
-    printf("\nUnhandled token: ");
-    printToken(&next);
+    printf("Unhandled token: "); printTokenType(next.tokenType); printf("\n");
     DIE("Aborting\n");
   }
 }
@@ -82,16 +84,25 @@ bool eof(ParserState *state) {
 
 #define nextIsClosingBrace(state) (state->current_token->tokenType == TOKEN_CLOSE_SQUARE)
 
-TokenType peekToken(ParserState *state) {
+TokenType peekTokenType(ParserState *state) {
   return state->current_token->tokenType;
 }
 
-void consume(ParserState *state, TokenType type) {
-  if (eof(state) || peekToken(state) != type) {
+Token *nextToken(ParserState *state) {
+  Token *next = state->current_token++;
+  return next;
+}
+
+void expect(ParserState *state, TokenType type) {
+  if (eof(state) || peekTokenType(state) != type) {
     printf("Expecting "); printTokenType(type); printf("\n");
     DIE("aborting\n");
   }
-  state->current_token++;
+}
+
+void consume(ParserState *state, TokenType type) {
+  expect(state, type);
+  nextToken(state);
 }
 
 void parseList(ParserState *state) {
@@ -107,7 +118,7 @@ void parseList(ParserState *state) {
     state->current_node = elem;
     _parse(state);
 
-    if (peekToken(state) == TOKEN_CLOSE_SQUARE || eof(state)) {
+    if (peekTokenType(state) == TOKEN_CLOSE_SQUARE || eof(state)) {
       break;
     }
     // This allows a trailing comma, could be fixed but why not keep it?
@@ -115,6 +126,35 @@ void parseList(ParserState *state) {
   }
 
   consume(state, TOKEN_CLOSE_SQUARE);
+  state->current_node = node;
+}
+
+void parseObject(ParserState *state) {
+  consume(state, TOKEN_OPEN_CURLY);
+
+  JSONNode *node = state->current_node;
+  NodeList *nodeList = NodeList_new();
+  node->tag = JSON_OBJECT;
+  node->data.JSON_OBJECT.nodes = nodeList;
+
+  while (!eof(state) && peekTokenType(state) != TOKEN_CLOSE_CURLY) {
+    expect(state, TOKEN_STRING_LITERAL);
+    char *name = nextToken(state)->contents.str;
+
+    consume(state, TOKEN_COLON);
+    JSONNode *elem = NodeList_insertNew(nodeList);
+    state->current_node = elem;
+    _parse(state);
+    elem->fieldName = strdup(name);
+
+    if (peekTokenType(state) == TOKEN_CLOSE_CURLY || eof(state)) {
+      break;
+    }
+    // This allows a trailing comma, could be fixed but why not keep it?
+    consume(state, TOKEN_COMMA);
+  }
+
+  consume(state, TOKEN_CLOSE_CURLY);
   state->current_node = node;
 }
 
@@ -156,10 +196,22 @@ void _printTree(int indentLevel, JSONNode *tree) {
       printIndent(indentLevel); printf("]\n");
       break;
     }
-    case JSON_OBJECT:
-      DIE("Unhandled node type");
+    case JSON_OBJECT: {
+      struct JSON_OBJECT data = node.data.JSON_OBJECT;
+      NodeList *list = data.nodes;
+
+      printIndent(indentLevel); printf("Object {\n");
+
+      for (int i = 0; i < list->length; i++) {
+        printIndent(indentLevel + 1); printf("\"%s\"\n", list->items[i].fieldName);
+        // printIndent(indentLevel + 1); printf("value: \n");
+        _printTree(indentLevel + 1, &list->items[i]);
+        if (i < list->length - 1) printf("\n");
+      }
+
+      printIndent(indentLevel); printf("}\n");
       break;
-      
+    }
   }
 }
 
@@ -189,7 +241,7 @@ void JSONNode_free(JSONNode *ptr, bool inList) {
     }
     case JSON_OBJECT: {
       struct JSON_OBJECT data = node.data.JSON_OBJECT;
-      // JSONNode_free(data.firstChild);
+      NodeList_free(data.nodes);
       break;
     }
     case JSON_LIST: {
