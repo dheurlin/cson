@@ -1,5 +1,8 @@
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "nodelist.h"
+#include "parser.h"
 
 NodeList *NodeList_new() {
   JSONNode *items = malloc(sizeof(JSONNode) * NODELIST_START_CAPACITY);
@@ -15,6 +18,10 @@ NodeList *NodeList_new() {
 
 
 void NodeList_free(NodeList *ptr) {
+  NodeList list = *ptr;
+  for (int i = 0; i < list.length; i++) {
+    JSONNode_free(list.items + i, true);
+  }
   free(ptr->items);
   free(ptr);
 }
@@ -33,8 +40,9 @@ JSONNode *NodeList_insert(NodeList *list, JSONNode node) {
     resize(list);
   }
 
-  list->items[list->length - 1] = node;
-  list->length = newLength;
+  JSONNode *ptr = &list->items[list->length];
+  *ptr = node;
 
-  return &(list->items[list->length - 1]);
+  list->length = newLength;
+  return ptr;
 }

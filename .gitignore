@@ -12,3 +12,4 @@ _deps
 .cmake/
 .cache/
 cson
+core*

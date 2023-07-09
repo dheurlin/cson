@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
 
   lex(&state);
 
-  JSONNode *parsed = parse(state.tokens);
+  JSONNode *parsed = parse(state.tokens, state.token_pos);
   printTree(parsed);
 
-  JSONNode_free(parsed);
+  JSONNode_free(parsed, false);
   fclose(fp);
 }

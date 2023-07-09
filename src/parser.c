@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "parser.h"
+#include "nodelist.h"
 
 void _parse(ParserState *state);
 void parseNull(ParserState *state);
@@ -16,7 +17,7 @@ JSONNode *parse(Token *tokens, int length) {
   ParserState state = {
     .current_node = root,
     .current_token = tokens,
-    .tokens_len = length,
+    .tokens_end = tokens + length
   };
 
   _parse(&state);
@@ -27,7 +28,6 @@ JSONNode *parse(Token *tokens, int length) {
 void _parse(ParserState *state) {
   Token next = *state->current_token;
   if (next.tokenType == TOKEN_NULL_LITERAL) {
-    printf("Found null literal\n");
     parseNull(state);
   } else if (next.tokenType == TOKEN_NUMBER_LITERAL) {
     parseNumber(state);
@@ -38,8 +38,9 @@ void _parse(ParserState *state) {
   } else if (next.tokenType == TOKEN_OPEN_SQUARE) {
     parseList(state);
   } else {
+    printf("\nUnhandled token: ");
     printToken(&next);
-    DIE("Unhandled token");
+    DIE("Aborting\n");
   }
 }
 
@@ -55,6 +56,7 @@ void parseNumber(ParserState *state) {
   node->data.JSON_NUMBER.number = state->current_token->contents.number;
   state->current_token++;
 }
+
 
 void parseString(ParserState *state) {
   JSONNode *node = state->current_node;
@@ -74,12 +76,46 @@ void parseBool(ParserState *state) {
   state->current_token++;
 }
 
-// void parseList(ParserState *state) {
-//   JSONNode *node = state->current_node;
-//   node->tag = JSON_BOOL;
-// }
+bool eof(ParserState *state) {
+  return state->current_token >= state->tokens_end;
+}
 
-#define printIndent(N) for (int i = 0; i < N; i++) printf(" ");
+#define nextIsClosingBrace(state) (state->current_token->tokenType == TOKEN_CLOSE_SQUARE)
+
+void parseList(ParserState *state) {
+  // consume opening brace
+  if (state->current_token->tokenType != TOKEN_OPEN_SQUARE) {
+    DIE("parseList: expecting [\n");
+  }
+  state->current_token++;
+
+  JSONNode *node = state->current_node;
+  NodeList *nodeList = NodeList_new();
+  node->tag = JSON_LIST;
+  node->data.JSON_LIST.nodes = nodeList;
+
+  while (!eof(state) && !nextIsClosingBrace(state)) {
+    JSONNode *elem = NodeList_insert(nodeList, (JSONNode){});
+    state->current_node = elem;
+    _parse(state);
+
+    if (state->current_token->tokenType == TOKEN_CLOSE_SQUARE) {
+      break;
+    }
+    if (state->current_token->tokenType != TOKEN_COMMA) {
+      printf("Expected JSON object, comma or closing bracket, got "); printTokenLn(state->current_token);
+    }
+    state->current_token++;
+  }
+  if (eof(state) || state->current_token->tokenType != TOKEN_CLOSE_SQUARE) {
+    DIE("parseList: expecting [\n");
+  }
+
+  state->current_token++;
+  state->current_node = node;
+}
+
+#define printIndent(N) for (int i = 0; i < (N * 2); i++) printf(" ");
 
 void _printTree(int indentLevel, JSONNode *tree) {
   JSONNode node = *tree;
@@ -105,9 +141,21 @@ void _printTree(int indentLevel, JSONNode *tree) {
       break;
     }
 
-    case JSON_LIST:
+    case JSON_LIST: {
+      struct JSON_LIST data = node.data.JSON_LIST;
+      JSONNode *items = data.nodes->items;
+      printIndent(indentLevel); printf("List (%d) [\n", data.nodes->length);
+
+      for (int i = 0; i < data.nodes->length; i++) {
+        _printTree(indentLevel + 1, &items[i]);
+      }
+      
+      printIndent(indentLevel); printf("]\n");
+      break;
+    }
     case JSON_OBJECT:
       DIE("Unhandled node type");
+      break;
       
   }
 }
@@ -116,7 +164,7 @@ void printTree(JSONNode *tree) {
   _printTree(0, tree);
 }
 
-void JSONNode_free(JSONNode *ptr) {
+void JSONNode_free(JSONNode *ptr, bool inList) {
   JSONNode node = *ptr;
   switch (node.tag) {
     case JSON_NULL: {
@@ -138,25 +186,24 @@ void JSONNode_free(JSONNode *ptr) {
     }
     case JSON_OBJECT: {
       struct JSON_OBJECT data = node.data.JSON_OBJECT;
-
-      char *name = data.name;
-      free(name);
-
-      JSONNode *value = data.value;
-      JSONNode_free(value);
+      // JSONNode_free(data.firstChild);
       break;
     }
     case JSON_LIST: {
       struct JSON_LIST data = node.data.JSON_LIST;
-      JSONNode *items = data.items;
-
-      for (int i = 0; i < data.length; i++) {
-        JSONNode_free(items + i);
-      }
+      NodeList_free(data.nodes);
       break;
     }
   }
 
-  free(ptr);
+  char *name = node.fieldName;
+  if (name != NULL) {
+    free(name);
+  }
+
+  // If the node is stored in a list, free(ptr) would deallocate that whole list.
+  if (!inList) {
+    free(ptr);
+  }
 }
 

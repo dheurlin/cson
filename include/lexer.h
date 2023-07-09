@@ -38,6 +38,8 @@ typedef struct {
 } LexerState;
 
 void lex(LexerState *state);
+
 void printToken(Token *token);
+#define printTokenLn(token) do { printToken(token); printf("\n"); } while(0);
 
 #endif

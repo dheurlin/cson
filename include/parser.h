@@ -23,18 +23,19 @@ struct JSONNode {
     struct JSON_BOOL   { bool boolean;           } JSON_BOOL;
     struct JSON_NULL   {                         } JSON_NULL;
     struct JSON_OBJECT { struct NodeList *nodes; } JSON_OBJECT;
-    struct JSON_LIST   { JSONNode *firstElem;    } JSON_LIST;
+    struct JSON_LIST   { struct NodeList *nodes; } JSON_LIST;
   } data;
+  char *fieldName;
 };
 
 typedef struct {
   Token *current_token;
-  int tokens_len;
+  Token *tokens_end;
   JSONNode *current_node;
 } ParserState;
 
 void printTree(JSONNode *root);
 JSONNode *parse(Token *tokens, int length);
-void JSONNode_free(JSONNode *node);
+void JSONNode_free(JSONNode *node, bool inList);
 
 #endif

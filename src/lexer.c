@@ -7,43 +7,43 @@
 void printToken(Token *token) {
   switch (token->tokenType) {
     case TOKEN_NUMBER_LITERAL:
-      printf("numberLiteral(%f)\n", token->contents.number);
+      printf("numberLiteral(%f)", token->contents.number);
       break;
 
     case TOKEN_STRING_LITERAL:
-      printf("stringLiteral(\"%s\")\n", token->contents.str);
+      printf("stringLiteral(\"%s\")", token->contents.str);
       break;
 
     case TOKEN_BOOL_LITERAL:
-      printf("boolLiteral(%s)\n", token->contents.str);
+      printf("boolLiteral(%s)", token->contents.str);
       break;
 
     case TOKEN_NULL_LITERAL:
-      printf("nullLiteral(null)\n");
+      printf("nullLiteral(null)");
       break;
 
     case TOKEN_OPEN_CURLY:
-      printf("openCurly( { )\n");
+      printf("openCurly( { )");
       break;
 
     case TOKEN_CLOSE_CURLY:
-      printf("closeCurly( } )\n");
+      printf("closeCurly( } )");
       break;
 
     case TOKEN_OPEN_SQUARE:
-      printf("openSquare( [ )\n");
+      printf("openSquare( [ )");
       break;
 
     case TOKEN_CLOSE_SQUARE:
-      printf("closeSquare( ] )\n");
+      printf("closeSquare( ] )");
       break;
 
     case TOKEN_COMMA:
-      printf("comma( , )\n");
+      printf("comma( , )");
       break;
 
     case TOKEN_COLON:
-      printf("colon( : )\n");
+      printf("colon( : )");
       break;
   }
 }
@@ -60,7 +60,7 @@ char peek(LexerState *state) {
   return state->input[state->input_pos];
 }
 
-char eof(LexerState *state) {
+static char eof(LexerState *state) {
   char next_char = peek(state);
   return state->input_pos >= state->input_length || next_char == '\0';
 }

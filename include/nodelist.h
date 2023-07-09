@@ -6,7 +6,7 @@
 #define NODELIST_START_CAPACITY 10
 #define NODELIST_RESIZE_FACTOR 2
 
-typedef struct {
+typedef struct NodeList {
   JSONNode *items;
   int length;
   int capcity;
