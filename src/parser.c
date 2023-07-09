@@ -95,7 +95,7 @@ void parseList(ParserState *state) {
   node->data.JSON_LIST.nodes = nodeList;
 
   while (!eof(state) && !nextIsClosingBrace(state)) {
-    JSONNode *elem = NodeList_insert(nodeList, (JSONNode){});
+    JSONNode *elem = NodeList_insertNew(nodeList);
     state->current_node = elem;
     _parse(state);
 

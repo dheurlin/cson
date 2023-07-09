@@ -15,5 +15,6 @@ typedef struct NodeList {
 NodeList *NodeList_new();
 void NodeList_free(NodeList *ptr);
 JSONNode *NodeList_insert(NodeList *list, JSONNode node);
+JSONNode *NodeList_insertNew(NodeList *list);
 
 #endif

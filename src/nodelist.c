@@ -46,3 +46,9 @@ JSONNode *NodeList_insert(NodeList *list, JSONNode node) {
   list->length = newLength;
   return ptr;
 }
+
+JSONNode *NodeList_insertNew(NodeList *list) {
+  return NodeList_insert(list, (JSONNode){});
+}
+
+
