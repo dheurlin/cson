@@ -2,6 +2,7 @@
   true,
   null,
   [1, 2, "hello", []],
+  [null],
   -123,
   "what",
 ]
