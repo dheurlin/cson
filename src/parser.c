@@ -12,6 +12,9 @@ void parseNumber(ParserState *state);
 void parseString(ParserState *state);
 void parseList(ParserState *state);
 void parseObject(ParserState *state);
+bool eof(ParserState *state);
+TokenType peekTokenType(ParserState *state);
+Token *nextToken(ParserState *state);
 
 JSONNode *parse(Token *tokens, int length) {
   JSONNode *root = malloc(sizeof(JSONNode));
@@ -28,60 +31,64 @@ JSONNode *parse(Token *tokens, int length) {
 
 static void _parse(ParserState *state) {
   Token next = *state->current_token;
-  if (next.tokenType == TOKEN_NULL_LITERAL) {
-    parseNull(state);
-  } else if (next.tokenType == TOKEN_NUMBER_LITERAL) {
-    parseNumber(state);
-  } else if (next.tokenType == TOKEN_STRING_LITERAL) {
-    parseString(state);
-  } else if (next.tokenType == TOKEN_BOOL_LITERAL) {
-    parseBool(state);
-  } else if (next.tokenType == TOKEN_OPEN_SQUARE) {
-    parseList(state);
-  } else if (next.tokenType == TOKEN_OPEN_CURLY) {
-    parseObject(state);
-  } else {
-    printf("Unhandled token: "); printTokenType(next.tokenType); printf("\n");
-    DIE("Aborting\n");
+  switch (next.tokenType) {
+    case TOKEN_NULL_LITERAL:
+      parseNull(state);
+      break;
+
+    case TOKEN_NUMBER_LITERAL:
+      parseNumber(state);
+      break;
+
+    case TOKEN_STRING_LITERAL:
+      parseString(state);
+      break;
+
+    case TOKEN_BOOL_LITERAL:
+      parseBool(state);
+      break;
+
+    case TOKEN_OPEN_SQUARE:
+      parseList(state);
+      break;
+
+    case TOKEN_OPEN_CURLY:
+      parseObject(state);
+      break;
+
+    default:
+      printf("Unhandled token: "); printTokenType(next.tokenType); printf("\n");
+      DIE("Aborting\n");
   }
 }
 
 void parseNull(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_NULL;
-  state->current_token++;
+  nextToken(state);
 }
 
 void parseNumber(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_NUMBER;
-  node->data.JSON_NUMBER.number = state->current_token->contents.number;
-  state->current_token++;
+  node->data.JSON_NUMBER.number = nextToken(state)->contents.number;
 }
 
 void parseString(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_STRING;
-
-  char *sourceStr = state->current_token->contents.str;
-  char *heapStr = strdup(sourceStr);
-  node->data.JSON_STRING.string = heapStr;
-
-  state->current_token++;
+  node->data.JSON_STRING.string = strdup(nextToken(state)->contents.str);
 }
 
 void parseBool(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_BOOL;
-  node->data.JSON_BOOL.boolean = strcmp(state->current_token->contents.str, "true") == 0;
-  state->current_token++;
+  node->data.JSON_BOOL.boolean = strcmp(nextToken(state)->contents.str, "true") == 0;
 }
 
 bool eof(ParserState *state) {
   return state->current_token >= state->tokens_end;
 }
-
-#define nextIsClosingBrace(state) (state->current_token->tokenType == TOKEN_CLOSE_SQUARE)
 
 TokenType peekTokenType(ParserState *state) {
   return state->current_token->tokenType;
@@ -112,7 +119,7 @@ void parseList(ParserState *state) {
   node->tag = JSON_LIST;
   node->data.JSON_LIST.nodes = nodeList;
 
-  while (!eof(state) && !nextIsClosingBrace(state)) {
+  while (!eof(state) && peekTokenType(state) != TOKEN_CLOSE_SQUARE) {
     JSONNode *elem = NodeList_insertNew(nodeList);
     state->current_node = elem;
     _parse(state);
@@ -141,6 +148,7 @@ void parseObject(ParserState *state) {
     char *name = nextToken(state)->contents.str;
 
     consume(state, TOKEN_COLON);
+
     JSONNode *elem = NodeList_insertNew(nodeList);
     state->current_node = elem;
     _parse(state);
@@ -187,6 +195,7 @@ void _printTree(int indentLevel, JSONNode *tree) {
     case JSON_LIST: {
       struct JSON_LIST data = node.data.JSON_LIST;
       JSONNode *items = data.nodes->items;
+
       printIndent(indentLevel); printf("List (%d) [\n", data.nodes->length);
 
       for (int i = 0; i < data.nodes->length; i++) {
@@ -196,6 +205,7 @@ void _printTree(int indentLevel, JSONNode *tree) {
       printIndent(indentLevel); printf("]\n");
       break;
     }
+
     case JSON_OBJECT: {
       struct JSON_OBJECT data = node.data.JSON_OBJECT;
       NodeList *list = data.nodes;
@@ -219,31 +229,31 @@ void printTree(JSONNode *tree) {
   _printTree(0, tree);
 }
 
-void JSONNode_free(JSONNode *ptr, bool inList) {
+void JSONNode_free(JSONNode *root) {
+  _JSONNode_free(root, false);
+}
+
+void _JSONNode_free(JSONNode *ptr, bool inList) {
   JSONNode node = *ptr;
   switch (node.tag) {
-    case JSON_NULL: {
+    case JSON_NULL:
+    case JSON_NUMBER:
+    case JSON_BOOL:
       break;
-    }
-    case JSON_NUMBER: {
-      struct JSON_NUMBER data = node.data.JSON_NUMBER;
-      break;
-    }
-    case JSON_BOOL: {
-      struct JSON_BOOL data = node.data.JSON_BOOL;
-      break;
-    }
+
     case JSON_STRING: {
       struct JSON_STRING data = node.data.JSON_STRING;
       char *str = data.string;
       free(str);
       break;
     }
+
     case JSON_OBJECT: {
       struct JSON_OBJECT data = node.data.JSON_OBJECT;
       NodeList_free(data.nodes);
       break;
     }
+
     case JSON_LIST: {
       struct JSON_LIST data = node.data.JSON_LIST;
       NodeList_free(data.nodes);

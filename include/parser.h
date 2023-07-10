@@ -36,6 +36,7 @@ typedef struct {
 
 void printTree(JSONNode *root);
 JSONNode *parse(Token *tokens, int length);
-void JSONNode_free(JSONNode *node, bool inList);
+void JSONNode_free(JSONNode *node);
+void _JSONNode_free(JSONNode *node, bool inList);
 
 #endif

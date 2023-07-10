@@ -19,7 +19,7 @@ NodeList *NodeList_new() {
 void NodeList_free(NodeList *ptr) {
   NodeList list = *ptr;
   for (int i = 0; i < list.length; i++) {
-    JSONNode_free(list.items + i, true);
+    _JSONNode_free(list.items + i, true);
   }
   free(ptr->items);
   free(ptr);

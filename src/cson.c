@@ -40,6 +40,6 @@ int main(int argc, char *argv[]) {
   JSONNode *parsed = parse(state.tokens, state.token_pos);
   printTree(parsed);
 
-  JSONNode_free(parsed, false);
+  JSONNode_free(parsed);
   fclose(fp);
 }
