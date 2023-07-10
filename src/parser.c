@@ -158,7 +158,8 @@ void parseObject(ParserState *state) {
   state->current_node = node;
 }
 
-#define printIndent(N) for (int i = 0; i < (N * 2); i++) printf(" ");
+#define indentDepth 2 
+#define printIndent(N) for (int i = 0; i < (N); i++) printf(" ");
 
 void _printTree(int indentLevel, JSONNode *tree) {
   JSONNode node = *tree;
@@ -190,7 +191,7 @@ void _printTree(int indentLevel, JSONNode *tree) {
       printIndent(indentLevel); printf("List (%d) [\n", data.nodes->length);
 
       for (int i = 0; i < data.nodes->length; i++) {
-        _printTree(indentLevel + 1, &items[i]);
+        _printTree(indentLevel + indentDepth, &items[i]);
       }
       
       printIndent(indentLevel); printf("]\n");
@@ -203,9 +204,9 @@ void _printTree(int indentLevel, JSONNode *tree) {
       printIndent(indentLevel); printf("Object {\n");
 
       for (int i = 0; i < list->length; i++) {
-        printIndent(indentLevel + 1); printf("\"%s\"\n", list->items[i].fieldName);
-        // printIndent(indentLevel + 1); printf("value: \n");
-        _printTree(indentLevel + 1, &list->items[i]);
+        char *name = list->items[i].fieldName;
+        printIndent(indentLevel + indentDepth); printf("\"%s\":\n ", name);
+        _printTree(indentLevel + (indentDepth * 2), &list->items[i]);
         if (i < list->length - 1) printf("\n");
       }
 
