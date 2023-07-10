@@ -5,7 +5,7 @@
 #include "parser.h"
 #include "nodelist.h"
 
-void _parse(ParserState *state);
+static void _parse(ParserState *state);
 void parseNull(ParserState *state);
 void parseBool(ParserState *state);
 void parseNumber(ParserState *state);
@@ -26,7 +26,7 @@ JSONNode *parse(Token *tokens, int length) {
   return root;
 }
 
-void _parse(ParserState *state) {
+static void _parse(ParserState *state) {
   Token next = *state->current_token;
   if (next.tokenType == TOKEN_NULL_LITERAL) {
     parseNull(state);
@@ -58,7 +58,6 @@ void parseNumber(ParserState *state) {
   node->data.JSON_NUMBER.number = state->current_token->contents.number;
   state->current_token++;
 }
-
 
 void parseString(ParserState *state) {
   JSONNode *node = state->current_node;
@@ -257,7 +256,8 @@ void JSONNode_free(JSONNode *ptr, bool inList) {
     free(name);
   }
 
-  // If the node is stored in a list, free(ptr) would deallocate that whole list.
+  // If the node is stored in a list, free(ptr) on the first element would deallocate that whole list.
+  // NodeList_free is responsible for deallocating the list as a whole for such nodes.
   if (!inList) {
     free(ptr);
   }

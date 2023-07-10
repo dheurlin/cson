@@ -16,7 +16,6 @@ NodeList *NodeList_new() {
   return listPtr;
 }
 
-
 void NodeList_free(NodeList *ptr) {
   NodeList list = *ptr;
   for (int i = 0; i < list.length; i++) {
@@ -31,7 +30,6 @@ static void resize(NodeList *list) {
   JSONNode *newItems = reallocarray(list->items, newCapacity, sizeof(JSONNode));
   list->items = newItems;
   list->capcity = newCapacity;
-
 }
 
 JSONNode *NodeList_insert(NodeList *list, JSONNode node) {
