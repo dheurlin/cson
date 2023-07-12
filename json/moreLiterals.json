@@ -1,5 +1,6 @@
 [
   true,
+  false,
   null,
   [1, 2, "hello", []],
   [null],
