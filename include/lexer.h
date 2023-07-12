@@ -38,6 +38,8 @@ typedef struct TokenList {
 typedef struct {
   char *input;
   TokenList *tokenList;
+  int row;
+  int col;
 } LexerState;
 
 // Does not take ownership of the input, caller must deallocate

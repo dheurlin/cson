@@ -110,6 +110,13 @@ static char eof(LexerState *state) {
 }
 
 char next(LexerState *state) {
+  char nextChar = peek(state);
+  if (nextChar == '\n') {
+    state->row++;
+    state->col = 1;
+  } else {
+    state->col++;
+  }
   return *state->input++;
 }
 
@@ -141,25 +148,27 @@ Token *TokenList_insertNew(TokenList *list) {
 }
 
 void lexWord(LexerState *state, char *word, TokenType type) {
+  int startRow = state->row;
+  int startCol = state->col;
+
   long len = strlen(word);
   char localStr[len + 1];
-  char next;
+  char nextChar;
   for (int i = 0; i < len; i++) {
-    next = state->input[i];
-    if (next == '\0') {
-      DIE("Expected \"%s\" at position X\n", word);
+    nextChar = next(state);
+    if (nextChar == '\0') {
+      DIE("Expected \"%s\" at %d:%d\n", word, startRow, startCol);
     }
-    localStr[i] = next;
+    localStr[i] = nextChar;
   }
   localStr[len] = '\0';
 
   if (strcmp(localStr, word) != 0) {
-    DIE("Expected \"%s\" at position X\n", word);
+    DIE("Expected \"%s\" at %d:%d\n", word, startRow, startCol);
   }
 
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = type;
-  state->input += len;
 }
 
 void lexTrue(LexerState *state) {
@@ -187,13 +196,19 @@ void lexNumber(LexerState *state) {
   double res = strtod(input, &input_end);
   int length = input_end - input;
 
-  state->input += length;
+  for (int i = 0; i < length; i++) {
+    next(state);
+  }
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = TOKEN_NUMBER_LITERAL;
   token->data.TOKEN_NUMBER_LITERAL.number = res;
 }
 
+// TODO This does not handle escape characters (\n, \" etc)
 void lexString(LexerState *state) {
+  int startRow = state->row;
+  int startCol = state->col;
+
   next(state); // skip initial "
  
   Token *token = TokenList_insertNew(state->tokenList);
@@ -202,7 +217,7 @@ void lexString(LexerState *state) {
   char *strStart = state->input;
   int strLen = 0;
   char next_char;
-  while ((next_char = next(state)) != '"' && !eof(state)) {
+  while ((next_char = next(state)) != '"' && !eof(state) && next_char != '\n') {
     strLen++;
   }
   char *copiedStr = malloc(strLen + 1);
@@ -211,8 +226,8 @@ void lexString(LexerState *state) {
 
   token->data.TOKEN_STRING_LITERAL.string = copiedStr;
 
-  if (eof(state)) {
-    DIE("Expected '\"' at position X, got EOF\n");
+  if (eof(state) || next_char == '\n') {
+    DIE("Unterminated string literal at %d:%d\n", startRow, startCol);
   }
 }
 
@@ -228,6 +243,8 @@ TokenList lex(char *input) {
   LexerState state = {
     .input = input,
     .tokenList = &list,
+    .col = 1,
+    .row = 1,
   };
 
   _lex(&state);
@@ -264,7 +281,7 @@ void _lex(LexerState *state) {
     } else if (eof(state)) {
       return;
     } else {
-      DIE("Unkown character at position X: %c\n", next);
+      DIE("Unkown character '%c' at %d:%d\n", next, state->row, state->col);
     }
   }
 }
