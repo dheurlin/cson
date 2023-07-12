@@ -101,16 +101,16 @@ char isWhitespace(char n) {
 }
 
 char peek(LexerState *state) {
-  return state->input[state->input_pos];
+  return state->input[0];
 }
 
 static char eof(LexerState *state) {
   char next_char = peek(state);
-  return state->input_pos >= state->input_length || next_char == '\0';
+  return next_char == '\0';
 }
 
 char next(LexerState *state) {
-  return state->input[state->input_pos++];
+  return *state->input++;
 }
 
 void skipWhitespace(LexerState *state) {
@@ -145,21 +145,21 @@ void lexWord(LexerState *state, char *word, TokenType type) {
   char localStr[len + 1];
   char next;
   for (int i = 0; i < len; i++) {
-    next = state->input[state->input_pos + i];
-    if (state->input_pos >= state->input_length || next == '\0') {
-      DIE("Expected \"%s\" at position %d\n", word, state->input_pos);
+    next = state->input[i];
+    if (next == '\0') {
+      DIE("Expected \"%s\" at position X\n", word);
     }
     localStr[i] = next;
   }
   localStr[len] = '\0';
 
   if (strcmp(localStr, word) != 0) {
-    DIE("Expected \"%s\" at position %d\n", word, state->input_pos);
+    DIE("Expected \"%s\" at position X\n", word);
   }
 
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = type;
-  state->input_pos += len;
+  state->input += len;
 }
 
 void lexTrue(LexerState *state) {
@@ -181,13 +181,13 @@ void lexSingleChar(LexerState *state, TokenType type) {
 }
 
 void lexNumber(LexerState *state) {
-  char *input = &state->input[state->input_pos];
+  char *input = state->input;
   char *input_end = input;
 
   double res = strtod(input, &input_end);
   int length = input_end - input;
 
-  state->input_pos += length;
+  state->input += length;
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = TOKEN_NUMBER_LITERAL;
   token->data.TOKEN_NUMBER_LITERAL.number = res;
@@ -199,7 +199,7 @@ void lexString(LexerState *state) {
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = TOKEN_STRING_LITERAL;
 
-  char *strStart = &state->input[state->input_pos];
+  char *strStart = state->input;
   int strLen = 0;
   char next_char;
   while ((next_char = next(state)) != '"' && !eof(state)) {
@@ -212,13 +212,13 @@ void lexString(LexerState *state) {
   token->data.TOKEN_STRING_LITERAL.string = copiedStr;
 
   if (eof(state)) {
-    DIE("Expected '\"' at position %d, got EOF\n", state->input_pos);
+    DIE("Expected '\"' at position X, got EOF\n");
   }
 }
 
 void _lex(LexerState *state);
 
-TokenList lex(char *input, int inputLen) {
+TokenList lex(char *input) {
   TokenList list = {
     .length = 0,
     .capacity = TOKEN_START_CAPACITY,
@@ -227,8 +227,6 @@ TokenList lex(char *input, int inputLen) {
 
   LexerState state = {
     .input = input,
-    .input_length = inputLen,
-    .input_pos = 0,
     .tokenList = &list,
   };
 
@@ -266,7 +264,7 @@ void _lex(LexerState *state) {
     } else if (eof(state)) {
       return;
     } else {
-      DIE("Unkown character at position %d: %c\n", state->input_pos, next);
+      DIE("Unkown character at position X: %c\n", next);
     }
   }
 }

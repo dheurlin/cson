@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   char input[MAXBUFLEN + 1];
   size_t file_len = read_whole_file(fp, argv[2], input);
 
-  TokenList tokens = lex(input, file_len);
+  TokenList tokens = lex(input);
 
   JSONNode *parsed = parse(tokens.tokens, tokens.length);
   printTree(parsed);

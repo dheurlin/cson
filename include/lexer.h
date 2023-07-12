@@ -37,13 +37,11 @@ typedef struct TokenList {
 
 typedef struct {
   char *input;
-  long input_length;
-  int input_pos; // TODO Should be able to just increment the pointer?
   TokenList *tokenList;
 } LexerState;
 
 // Does not take ownership of the input, caller must deallocate
-TokenList lex(char *input, int inputLen);
+TokenList lex(char *input);
 
 void TokenList_free(TokenList *list);
 
