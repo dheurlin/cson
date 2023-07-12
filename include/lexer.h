@@ -1,10 +1,9 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#define MAXBUFLEN 1000000
+#include "stdbool.h"
 
-#define TOKEN_MAX_LENGTH 256
-#define MAX_NUM_TOKENS 10000
+#define TOKEN_START_CAPACITY 10
 
 #define DIE(msg...) do { fprintf(stderr, msg); exit(1); } while(0);
 
@@ -23,21 +22,30 @@ typedef enum {
 
 typedef struct {
   TokenType tokenType;
-  union Data {
-    double number;
-    char str[TOKEN_MAX_LENGTH];
-  } contents;
+  union {
+    struct TOKEN_STRING_LITERAL { char *string;  } TOKEN_STRING_LITERAL;
+    struct TOKEN_NUMBER_LITERAL { double number; } TOKEN_NUMBER_LITERAL;
+    struct TOKEN_BOOL_LITERAL   { bool boolean;  } TOKEN_BOOL_LITERAL;
+  } data;
 } Token;
+
+typedef struct TokenList {
+  Token *tokens;
+  int length;
+  int capacity;
+} TokenList;
 
 typedef struct {
   char *input;
   long input_length;
-  int input_pos;
-  Token tokens[MAX_NUM_TOKENS];
-  int token_pos;
+  int input_pos; // TODO Should be able to just increment the pointer?
+  TokenList *tokenList;
 } LexerState;
 
-void lex(LexerState *state);
+// Does not take ownership of the input, caller must deallocate
+TokenList lex(char *input, int inputLen);
+
+void TokenList_free(TokenList *list);
 
 void printToken(Token *token);
 void printTokenType(TokenType type);

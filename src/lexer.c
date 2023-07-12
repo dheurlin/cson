@@ -51,15 +51,15 @@ void printTokenType(TokenType type) {
 void printToken(Token *token) {
   switch (token->tokenType) {
     case TOKEN_NUMBER_LITERAL:
-      printf("numberLiteral(%f)", token->contents.number);
+      printf("numberLiteral(%f)", token->data.TOKEN_NUMBER_LITERAL.number);
       break;
 
     case TOKEN_STRING_LITERAL:
-      printf("stringLiteral(\"%s\")", token->contents.str);
+      printf("stringLiteral(\"%s\")", token->data.TOKEN_STRING_LITERAL.string);
       break;
 
     case TOKEN_BOOL_LITERAL:
-      printf("boolLiteral(%s)", token->contents.str);
+      printf("boolLiteral(%s)", (token->data.TOKEN_BOOL_LITERAL.boolean ? "true" : "false"));
       break;
 
     case TOKEN_NULL_LITERAL:
@@ -123,6 +123,23 @@ void skipWhitespace(LexerState *state) {
   }
 }
 
+void TokenList_resize(TokenList *list) {
+  int newCapacity = list->capacity * 2;
+  Token *newItems = reallocarray(list->tokens, newCapacity, sizeof(Token));
+  list->tokens = newItems;
+  list->capacity = newCapacity;
+}
+
+Token *TokenList_insertNew(TokenList *list) {
+  int oldLength = list->length;
+  int newLength = oldLength + 1;
+  if (newLength > list->capacity) {
+    TokenList_resize(list);
+  }
+  list->length = newLength;
+  return &list->tokens[oldLength];
+}
+
 void lexWord(LexerState *state, char *word, TokenType type) {
   long len = strlen(word);
   char localStr[len + 1];
@@ -140,15 +157,26 @@ void lexWord(LexerState *state, char *word, TokenType type) {
     DIE("Expected \"%s\" at position %d\n", word, state->input_pos);
   }
 
-  Token *token = &state->tokens[state->token_pos++];
+  Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = type;
-  strcpy(token->contents.str, localStr);
   state->input_pos += len;
+}
+
+void lexTrue(LexerState *state) {
+  lexWord(state, "true", TOKEN_BOOL_LITERAL);
+  Token *currToken = &state->tokenList->tokens[state->tokenList->length - 1];
+  currToken->data.TOKEN_BOOL_LITERAL.boolean = true;
+}
+
+void lexFalse(LexerState *state) {
+  lexWord(state, "false", TOKEN_BOOL_LITERAL);
+  Token *currToken = &state->tokenList->tokens[state->tokenList->length - 1];
+  currToken->data.TOKEN_BOOL_LITERAL.boolean = false;
 }
 
 void lexSingleChar(LexerState *state, TokenType type) {
   next(state);
-  Token *token = &state->tokens[state->token_pos++];
+  Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = type;
 }
 
@@ -160,30 +188,55 @@ void lexNumber(LexerState *state) {
   int length = input_end - input;
 
   state->input_pos += length;
-  Token *token = &state->tokens[state->token_pos++];
+  Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = TOKEN_NUMBER_LITERAL;
-  token->contents.number = res;
+  token->data.TOKEN_NUMBER_LITERAL.number = res;
 }
 
 void lexString(LexerState *state) {
   next(state); // skip initial "
  
-  Token *token = &state->tokens[state->token_pos++];
+  Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = TOKEN_STRING_LITERAL;
 
-  int index = 0;
+  char *strStart = &state->input[state->input_pos];
+  int strLen = 0;
   char next_char;
   while ((next_char = next(state)) != '"' && !eof(state)) {
-    token->contents.str[index++] = next_char;
+    strLen++;
   }
-  token->contents.str[index++] = '\0';
+  char *copiedStr = malloc(strLen + 1);
+  memcpy(copiedStr, strStart, strLen);
+  copiedStr[strLen] = '\0';
+
+  token->data.TOKEN_STRING_LITERAL.string = copiedStr;
 
   if (eof(state)) {
     DIE("Expected '\"' at position %d, got EOF\n", state->input_pos);
   }
 }
 
-void lex(LexerState *state) {
+void _lex(LexerState *state);
+
+TokenList lex(char *input, int inputLen) {
+  TokenList list = {
+    .length = 0,
+    .capacity = TOKEN_START_CAPACITY,
+    .tokens = malloc(TOKEN_START_CAPACITY * sizeof(Token))
+  };
+
+  LexerState state = {
+    .input = input,
+    .input_length = inputLen,
+    .input_pos = 0,
+    .tokenList = &list,
+  };
+
+  _lex(&state);
+  return list;
+}
+
+void _lex(LexerState *state) {
   while (!eof(state)) {
     skipWhitespace(state);
     char next = peek(state);
@@ -193,9 +246,9 @@ void lex(LexerState *state) {
     } else if (next == '"') {
       lexString(state);
     } else if (next == 't') {
-      lexWord(state, "true", TOKEN_BOOL_LITERAL);
+      lexTrue(state);
     } else if (next == 'f') {
-      lexWord(state, "false", TOKEN_BOOL_LITERAL);
+      lexFalse(state);
     } else if (next == 'n') {
       lexWord(state, "null", TOKEN_NULL_LITERAL);
     } else if (next == '{') {
@@ -217,3 +270,28 @@ void lex(LexerState *state) {
     }
   }
 }
+
+void TokenList_free(TokenList *list) {
+  for (int i = 0; i < list->length; i++) {
+    Token token = list->tokens[i];
+    switch (token.tokenType) {
+      case TOKEN_STRING_LITERAL: {
+        char *str = token.data.TOKEN_STRING_LITERAL.string;
+        free(str);
+      }
+
+      case TOKEN_NUMBER_LITERAL:
+      case TOKEN_BOOL_LITERAL:
+      case TOKEN_NULL_LITERAL:
+      case TOKEN_OPEN_CURLY:
+      case TOKEN_CLOSE_CURLY:
+      case TOKEN_OPEN_SQUARE:
+      case TOKEN_CLOSE_SQUARE:
+      case TOKEN_COMMA:
+      case TOKEN_COLON:
+        break;
+    }
+  }
+  free(list->tokens);
+}
+

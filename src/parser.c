@@ -71,19 +71,20 @@ void parseNull(ParserState *state) {
 void parseNumber(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_NUMBER;
-  node->data.JSON_NUMBER.number = nextToken(state)->contents.number;
+  node->data.JSON_NUMBER.number = nextToken(state)->data.TOKEN_NUMBER_LITERAL.number;
 }
 
 void parseString(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_STRING;
-  node->data.JSON_STRING.string = strdup(nextToken(state)->contents.str);
+  node->data.JSON_STRING.string = strdup(nextToken(state)->data.TOKEN_STRING_LITERAL.string);
 }
 
 void parseBool(ParserState *state) {
   JSONNode *node = state->current_node;
   node->tag = JSON_BOOL;
-  node->data.JSON_BOOL.boolean = strcmp(nextToken(state)->contents.str, "true") == 0;
+  bool contents = nextToken(state)->data.TOKEN_BOOL_LITERAL.boolean;
+  node->data.JSON_BOOL.boolean = contents;
 }
 
 bool eof(ParserState *state) {
@@ -145,7 +146,7 @@ void parseObject(ParserState *state) {
 
   while (!eof(state) && peekTokenType(state) != TOKEN_CLOSE_CURLY) {
     expect(state, TOKEN_STRING_LITERAL);
-    char *name = nextToken(state)->contents.str;
+    char *name = nextToken(state)->data.TOKEN_STRING_LITERAL.string;
 
     consume(state, TOKEN_COLON);
 

@@ -4,6 +4,8 @@
 #include "lexer.h"
 #include "parser.h"
 
+#define MAXBUFLEN 1000000
+
 size_t read_whole_file(FILE* fp, char *filename, char *dest) {
   if (fp == NULL) {
     DIE("File %s not found\n", filename);
@@ -28,18 +30,12 @@ int main(int argc, char *argv[]) {
   char input[MAXBUFLEN + 1];
   size_t file_len = read_whole_file(fp, argv[2], input);
 
-  LexerState state = {
-    .input = input,
-    .input_length = file_len,
-    .input_pos = 0,
-    .token_pos = 0,
-  };
+  TokenList tokens = lex(input, file_len);
 
-  lex(&state);
-
-  JSONNode *parsed = parse(state.tokens, state.token_pos);
+  JSONNode *parsed = parse(tokens.tokens, tokens.length);
   printTree(parsed);
 
   JSONNode_free(parsed);
+  TokenList_free(&tokens);
   fclose(fp);
 }
