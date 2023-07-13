@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "lexer.h"
+#include "tokenlist.h"
 #include "parser.h"
 
 #define MAXBUFLEN 1000000

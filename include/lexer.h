@@ -29,23 +29,17 @@ typedef struct {
   } data;
 } Token;
 
-typedef struct TokenList {
-  Token *tokens;
-  int length;
-  int capacity;
-} TokenList;
+struct TokenList;
 
 typedef struct {
   char *input;
-  TokenList *tokenList;
+  struct TokenList *tokenList;
   int row;
   int col;
 } LexerState;
 
 // Does not take ownership of the input, caller must deallocate
-TokenList lex(char *input);
-
-void TokenList_free(TokenList *list);
+struct TokenList lex(char *input);
 
 void printToken(Token *token);
 void printTokenType(TokenType type);
