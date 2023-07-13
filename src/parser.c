@@ -4,6 +4,8 @@
 
 #include "parser.h"
 #include "nodelist.h"
+#include "lexer.h"
+#include "tokenlist.h"
 
 static void _parse(ParserState *state);
 void parseNull(ParserState *state);
@@ -16,16 +18,19 @@ bool eof(ParserState *state);
 TokenType peekTokenType(ParserState *state);
 Token *nextToken(ParserState *state);
 
-JSONNode *parse(Token *tokens, int length) {
+JSONNode *parse(char *input) {
+  TokenList lexed = lex(input);
+
   JSONNode *root = malloc(sizeof(JSONNode));
   ParserState state = {
     .current_node = root,
-    .current_token = tokens,
-    .tokens_end = tokens + length
+    .current_token = lexed.tokens,
+    .tokens_end = lexed.tokens + lexed.length,
   };
 
   _parse(&state);
 
+  TokenList_free(&lexed);
   return root;
 }
 

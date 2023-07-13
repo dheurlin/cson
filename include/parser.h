@@ -34,8 +34,9 @@ typedef struct {
   JSONNode *current_node;
 } ParserState;
 
+// Does not take ownership of the input, caller must deallocate
+JSONNode *parse(char *input);
 void printTree(JSONNode *root);
-JSONNode *parse(Token *tokens, int length);
 void JSONNode_free(JSONNode *node);
 void _JSONNode_free(JSONNode *node, bool inList);
 

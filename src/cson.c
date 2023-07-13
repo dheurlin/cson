@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lexer.h"
-#include "tokenlist.h"
 #include "parser.h"
 
 #define MAXBUFLEN 1000000
@@ -31,12 +29,10 @@ int main(int argc, char *argv[]) {
   char input[MAXBUFLEN + 1];
   size_t file_len = read_whole_file(fp, argv[2], input);
 
-  TokenList tokens = lex(input);
+  JSONNode *parsed = parse(input);
 
-  JSONNode *parsed = parse(tokens.tokens, tokens.length);
   printTree(parsed);
 
   JSONNode_free(parsed);
-  TokenList_free(&tokens);
   fclose(fp);
 }
