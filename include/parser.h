@@ -32,6 +32,7 @@ typedef struct {
   Token *current_token;
   Token *tokens_end;
   JSONNode *current_node;
+  int depth;
 } ParserState;
 
 // Does not take ownership of the input, caller must deallocate

@@ -40,8 +40,6 @@ JSONNode *parse(char *input) {
 
   _parse(&state);
 
-  expectEof(&state);
-
   TokenList_free(&lexed.tokenList);
   return root;
 }
@@ -76,6 +74,10 @@ static void _parse(ParserState *state) {
     default:
       printf("Unexpected token at %d:%d: ", next.row, next.col); printTokenType(next.tokenType); printf("\n");
       DIE("Aborting\n");
+  }
+
+  if (state->depth == 0) {
+    expectEof(state);
   }
 }
 
@@ -144,6 +146,7 @@ void consume(ParserState *state, TokenType type) {
 }
 
 void parseList(ParserState *state) {
+  state->depth++;
   consume(state, TOKEN_OPEN_SQUARE);
 
   JSONNode *node = state->current_node;
@@ -164,10 +167,12 @@ void parseList(ParserState *state) {
   }
 
   consume(state, TOKEN_CLOSE_SQUARE);
+  state->depth--;
   state->current_node = node;
 }
 
 void parseObject(ParserState *state) {
+  state->depth++;
   consume(state, TOKEN_OPEN_CURLY);
 
   JSONNode *node = state->current_node;
@@ -194,6 +199,7 @@ void parseObject(ParserState *state) {
   }
 
   consume(state, TOKEN_CLOSE_CURLY);
+  state->depth--;
   state->current_node = node;
 }
 
