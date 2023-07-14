@@ -1,4 +1,4 @@
-#include "tokenlist.h"
+#include "lexer.h"
 #include <stdlib.h>
 
 void TokenList_resize(TokenList *list) {
@@ -8,7 +8,7 @@ void TokenList_resize(TokenList *list) {
   list->capacity = newCapacity;
 }
 
-Token *TokenList_insertNew(TokenList *list) {
+struct Token *TokenList_insertNew(TokenList *list) {
   int oldLength = list->length;
   int newLength = oldLength + 1;
   if (newLength > list->capacity) {
@@ -20,7 +20,7 @@ Token *TokenList_insertNew(TokenList *list) {
 
 void TokenList_free(TokenList *list) {
   for (int i = 0; i < list->length; i++) {
-    Token token = list->tokens[i];
+    struct Token token = list->tokens[i];
     switch (token.tokenType) {
       case TOKEN_STRING_LITERAL: {
         char *str = token.data.TOKEN_STRING_LITERAL.string;

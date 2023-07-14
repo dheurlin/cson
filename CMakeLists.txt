@@ -15,7 +15,6 @@ set(SOURCES
   include/lexer.h
   include/parser.h
   include/nodelist.h
-  include/tokenlist.h
 )
 
 add_executable(cson ${SOURCES})

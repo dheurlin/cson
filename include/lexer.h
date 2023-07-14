@@ -20,7 +20,7 @@ typedef enum {
   TOKEN_COLON,
 } TokenType;
 
-typedef struct {
+typedef struct Token {
   TokenType tokenType;
   union {
     struct TOKEN_STRING_LITERAL { char *string;  } TOKEN_STRING_LITERAL;
@@ -29,20 +29,38 @@ typedef struct {
   } data;
 } Token;
 
-struct TokenList;
+typedef struct TokenList {
+  struct Token *tokens;
+  int length;
+  int capacity;
+} TokenList;
+
+#define MAX_ERR_SIZE 256
 
 typedef struct {
   char *input;
   struct TokenList *tokenList;
   int row;
   int col;
+  char errorMsg[MAX_ERR_SIZE];
+  int status;
 } LexerState;
 
+typedef struct {
+  int status;
+  char errorMsg[MAX_ERR_SIZE];
+  struct TokenList tokenList;
+} LexResult;
+
 // Does not take ownership of the input, caller must deallocate
-struct TokenList lex(char *input);
+LexResult lex(char *input);
 
 void printToken(Token *token);
 void printTokenType(TokenType type);
 #define printTokenLn(token) do { printToken(token); printf("\n"); } while(0);
+
+void TokenList_free(TokenList *list);
+struct Token *TokenList_insertNew(TokenList *list);
+void TokenList_free(TokenList *list);
 
 #endif
