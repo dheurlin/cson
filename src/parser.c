@@ -14,6 +14,8 @@ void parseString(ParserState *state);
 void parseList(ParserState *state);
 void parseObject(ParserState *state);
 bool eof(ParserState *state);
+void consume(ParserState *state, TokenType type);
+void expect(ParserState *state, TokenType type);
 void expectEof(ParserState *state);
 TokenType peekTokenType(ParserState *state);
 Token *nextToken(ParserState *state);
@@ -106,45 +108,6 @@ void parseBool(ParserState *state) {
   node->data.JSON_BOOL.boolean = contents;
 }
 
-bool eof(ParserState *state) {
-  return state->current_token >= state->tokens_end;
-}
-
-TokenType peekTokenType(ParserState *state) {
-  return state->current_token->tokenType;
-}
-
-Token peekToken(ParserState *state) {
-  return *state->current_token;
-}
-
-Token *nextToken(ParserState *state) {
-  Token *next = state->current_token++;
-  return next;
-}
-
-void expect(ParserState *state, TokenType type) {
-  Token next = peekToken(state);
-  if (eof(state) || peekTokenType(state) != type) {
-    printf("Expecting "); printTokenType(type); 
-    if (eof(state)) printf(" at end of string\n");
-    else            printf(" at %d:%d\n", next.row, next.col);
-    DIE("aborting\n");
-  }
-}
-
-void expectEof(ParserState *state) {
-  if (!eof(state)) {
-    Token next = peekToken(state);
-    DIE("Trailing tokens at %d:%d, missmatched braces?\n", next.row, next.col);
-  }
-}
-
-void consume(ParserState *state, TokenType type) {
-  expect(state, type);
-  nextToken(state);
-}
-
 void parseList(ParserState *state) {
   state->depth++;
   consume(state, TOKEN_OPEN_SQUARE);
@@ -203,8 +166,53 @@ void parseObject(ParserState *state) {
   state->current_node = node;
 }
 
+bool eof(ParserState *state) {
+  return state->current_token >= state->tokens_end;
+}
+
+TokenType peekTokenType(ParserState *state) {
+  return state->current_token->tokenType;
+}
+
+Token peekToken(ParserState *state) {
+  return *state->current_token;
+}
+
+Token *nextToken(ParserState *state) {
+  Token *next = state->current_token++;
+  return next;
+}
+
+void expect(ParserState *state, TokenType type) {
+  Token next = peekToken(state);
+  if (eof(state) || peekTokenType(state) != type) {
+    printf("Expecting "); printTokenType(type); 
+    if (eof(state)) printf(" at end of string\n");
+    else            printf(" at %d:%d\n", next.row, next.col);
+    DIE("aborting\n");
+  }
+}
+
+void expectEof(ParserState *state) {
+  if (!eof(state)) {
+    Token next = peekToken(state);
+    DIE("Trailing tokens at %d:%d, missmatched braces?\n", next.row, next.col);
+  }
+}
+
+void consume(ParserState *state, TokenType type) {
+  expect(state, type);
+  nextToken(state);
+}
+
 #define indentDepth 2 
 #define printIndent(N) for (int i = 0; i < (N); i++) printf(" ");
+
+void _printTree(int indentLevel, JSONNode *tree);
+
+void printTree(JSONNode *tree) {
+  _printTree(0, tree);
+}
 
 void _printTree(int indentLevel, JSONNode *tree) {
   JSONNode node = *tree;
@@ -261,10 +269,6 @@ void _printTree(int indentLevel, JSONNode *tree) {
       break;
     }
   }
-}
-
-void printTree(JSONNode *tree) {
-  _printTree(0, tree);
 }
 
 void JSONNode_free(JSONNode *root) {
