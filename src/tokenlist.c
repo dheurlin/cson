@@ -25,6 +25,7 @@ void TokenList_free(TokenList *list) {
       case TOKEN_STRING_LITERAL: {
         char *str = token.data.TOKEN_STRING_LITERAL.string;
         free(str);
+        break;
       }
 
       case TOKEN_NUMBER_LITERAL:
