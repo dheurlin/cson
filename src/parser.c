@@ -14,8 +14,10 @@ void parseString(ParserState *state);
 void parseList(ParserState *state);
 void parseObject(ParserState *state);
 bool eof(ParserState *state);
+void expectEof(ParserState *state);
 TokenType peekTokenType(ParserState *state);
 Token *nextToken(ParserState *state);
+Token peekToken(ParserState *state);
 
 JSONNode *parse(char *input) {
   LexResult lexed = lex(input);
@@ -37,6 +39,8 @@ JSONNode *parse(char *input) {
   };
 
   _parse(&state);
+
+  expectEof(&state);
 
   TokenList_free(&lexed.tokenList);
   return root;
@@ -127,12 +131,18 @@ void expect(ParserState *state, TokenType type) {
   }
 }
 
+void expectEof(ParserState *state) {
+  if (!eof(state)) {
+    Token next = peekToken(state);
+    DIE("Trailing tokens at %d:%d, missmatched braces?\n", next.row, next.col);
+  }
+}
+
 void consume(ParserState *state, TokenType type) {
   expect(state, type);
   nextToken(state);
 }
 
-// TODO stops parsing if we have too many ]s, thinking it's the end of the file
 void parseList(ParserState *state) {
   consume(state, TOKEN_OPEN_SQUARE);
 
