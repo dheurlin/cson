@@ -38,6 +38,7 @@ JSONNode *parse(char *input) {
     .current_node = root,
     .current_token = lexed.tokenList.tokens,
     .tokens_end = lexed.tokenList.tokens + lexed.tokenList.length,
+    .depth = 0,
   };
 
   _parse(&state);
