@@ -273,43 +273,43 @@ void printTokenType(TokenType type) {
 void printToken(Token *token) {
   switch (token->tokenType) {
     case TOKEN_NUMBER_LITERAL:
-      printf("numberLiteral(%f)", token->data.TOKEN_NUMBER_LITERAL.number);
+      printf("%d:%d numberLiteral(%f)", token->row, token->col, token->data.TOKEN_NUMBER_LITERAL.number);
       break;
 
     case TOKEN_STRING_LITERAL:
-      printf("stringLiteral(\"%s\")", token->data.TOKEN_STRING_LITERAL.string);
+      printf("%d:%d stringLiteral(\"%s\")", token->row, token->col, token->data.TOKEN_STRING_LITERAL.string);
       break;
 
     case TOKEN_BOOL_LITERAL:
-      printf("boolLiteral(%s)", (token->data.TOKEN_BOOL_LITERAL.boolean ? "true" : "false"));
+      printf("%d:%d boolLiteral(%s)", token->row, token->col, (token->data.TOKEN_BOOL_LITERAL.boolean ? "true" : "false"));
       break;
 
     case TOKEN_NULL_LITERAL:
-      printf("nullLiteral(null)");
+      printf("%d:%d nullLiteral(null)", token->row, token->col);
       break;
 
     case TOKEN_OPEN_CURLY:
-      printf("openCurly( { )");
+      printf("%d:%d openCurly( { )", token->row, token->col);
       break;
 
     case TOKEN_CLOSE_CURLY:
-      printf("closeCurly( } )");
+      printf("%d:%d closeCurly( } )", token->row, token->col);
       break;
 
     case TOKEN_OPEN_SQUARE:
-      printf("openSquare( [ )");
+      printf("%d:%d openSquare( [ )", token->row, token->col);
       break;
 
     case TOKEN_CLOSE_SQUARE:
-      printf("closeSquare( ] )");
+      printf("%d:%d closeSquare( ] )", token->row, token->col);
       break;
 
     case TOKEN_COMMA:
-      printf("comma( , )");
+      printf("%d:%d comma( , )", token->row, token->col);
       break;
 
     case TOKEN_COLON:
-      printf("colon( : )");
+      printf("%d:%d colon( : )", token->row, token->col);
       break;
   }
 }

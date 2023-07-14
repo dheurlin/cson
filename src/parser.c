@@ -25,6 +25,10 @@ JSONNode *parse(char *input) {
     // TODO free TokenList?
   }
 
+  // for(int i = 0; i < lexed.tokenList.length; i++) {
+  //   printTokenLn(&lexed.tokenList.tokens[i]);
+  // }
+
   JSONNode *root = malloc(sizeof(JSONNode));
   ParserState state = {
     .current_node = root,
@@ -66,7 +70,7 @@ static void _parse(ParserState *state) {
       break;
 
     default:
-      printf("Unhandled token: "); printTokenType(next.tokenType); printf("\n");
+      printf("Unexpected token at %d:%d: ", next.row, next.col); printTokenType(next.tokenType); printf("\n");
       DIE("Aborting\n");
   }
 }
@@ -104,14 +108,21 @@ TokenType peekTokenType(ParserState *state) {
   return state->current_token->tokenType;
 }
 
+Token peekToken(ParserState *state) {
+  return *state->current_token;
+}
+
 Token *nextToken(ParserState *state) {
   Token *next = state->current_token++;
   return next;
 }
 
 void expect(ParserState *state, TokenType type) {
+  Token next = peekToken(state);
   if (eof(state) || peekTokenType(state) != type) {
-    printf("Expecting "); printTokenType(type); printf("\n");
+    printf("Expecting "); printTokenType(type); 
+    if (eof(state)) printf(" at end of string\n");
+    else            printf(" at %d:%d\n", next.row, next.col);
     DIE("aborting\n");
   }
 }
@@ -121,6 +132,7 @@ void consume(ParserState *state, TokenType type) {
   nextToken(state);
 }
 
+// TODO stops parsing if we have too many ]s, thinking it's the end of the file
 void parseList(ParserState *state) {
   consume(state, TOKEN_OPEN_SQUARE);
 
