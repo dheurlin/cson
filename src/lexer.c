@@ -150,6 +150,8 @@ void lexWord(LexerState *state, char *word, TokenType type) {
 
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = type;
+  token->col = startCol;
+  token->row = startRow;
 }
 
 void lexTrue(LexerState *state) {
@@ -165,12 +167,19 @@ void lexFalse(LexerState *state) {
 }
 
 void lexSingleChar(LexerState *state, TokenType type) {
+  int startRow = state->row;
+  int startCol = state->col;
+
   next(state);
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = type;
+  token->row = startRow;
+  token->col = startCol;
 }
 
 void lexNumber(LexerState *state) {
+  int startRow = state->row;
+  int startCol = state->col;
   char *input = state->input;
   char *input_end = input;
 
@@ -183,6 +192,8 @@ void lexNumber(LexerState *state) {
   Token *token = TokenList_insertNew(state->tokenList);
   token->tokenType = TOKEN_NUMBER_LITERAL;
   token->data.TOKEN_NUMBER_LITERAL.number = res;
+  token->row = startRow;
+  token->col = startCol;
 }
 
 // TODO This does not handle escape characters (\n, \" etc)
@@ -201,15 +212,18 @@ void lexString(LexerState *state) {
   while ((next_char = next(state)) != '"' && !eof(state) && next_char != '\n') {
     strLen++;
   }
+
+  if (eof(state) || next_char == '\n') {
+    FAIL(state, "Unterminated string literal at %d:%d\n", startRow, startCol);
+  }
+
   char *copiedStr = malloc(strLen + 1);
   memcpy(copiedStr, strStart, strLen);
   copiedStr[strLen] = '\0';
 
   token->data.TOKEN_STRING_LITERAL.string = copiedStr;
-
-  if (eof(state) || next_char == '\n') {
-    FAIL(state, "Unterminated string literal at %d:%d\n", startRow, startCol);
-  }
+  token->row = startRow;
+  token->col = startCol;
 }
 
 void printTokenType(TokenType type) {

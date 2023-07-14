@@ -27,6 +27,8 @@ typedef struct Token {
     struct TOKEN_NUMBER_LITERAL { double number; } TOKEN_NUMBER_LITERAL;
     struct TOKEN_BOOL_LITERAL   { bool boolean;  } TOKEN_BOOL_LITERAL;
   } data;
+  int row;
+  int col;
 } Token;
 
 typedef struct TokenList {
