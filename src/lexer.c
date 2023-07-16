@@ -5,17 +5,15 @@
 #include "lexer.h"
 
 #define FAIL(state, args...) do {\
-    state->status = -1;\
-    sprintf(state->errorMsg, args);\
-    return;\
-  } while(0)
+  sprintf(state->errorMsg, args);\
+  return false;\
+} while(0)
 
 #define TRY(cmd) do {\
-    cmd;\
-    if (state->status < 0) return;\
-  } while(0)
+  if (!cmd) return false;\
+} while(0)
 
-void _lex(LexerState *state);
+bool _lex(LexerState *state);
 static char eof(LexerState *state);
 void skipWhitespace(LexerState *state);
 char isDigit(char n);
@@ -23,10 +21,10 @@ char next(LexerState *state);
 char peek(LexerState *state);
 void lexNumber(LexerState *state);
 void lexSingleChar(LexerState *state, TokenType type);
-void lexString(LexerState *state);
-void lexFalse(LexerState *state);
-void lexTrue(LexerState *state);
-void lexWord(LexerState *state, char *word, TokenType type);
+bool lexString(LexerState *state);
+bool lexFalse(LexerState *state);
+bool lexTrue(LexerState *state);
+bool lexWord(LexerState *state, char *word, TokenType type);
 
 LexResult lex(char *input) {
   TokenList list = {
@@ -40,26 +38,25 @@ LexResult lex(char *input) {
     .tokenList = &list,
     .col = 1,
     .row = 1,
-    .status = 0,
     .errorMsg = "",
   };
 
-  _lex(&state);
+  bool status = _lex(&state);
 
-  LexResult res = {
-    .tokenList = list,
-    .status = state.status,
-  };
-
-  if (state.status < 0) {
-    strcpy(res.errorMsg, state.errorMsg);
+  LexResult res;
+  if (status) {
+    res.status = LEXER_SUCCESS;
+    res.result.LEXER_SUCCESS.tokenList = list;
+  } else {
+    res.status = LEXER_FAIL;
+    strcpy(res.result.LEXER_FAIL.errorMsg, state.errorMsg);
     TokenList_free(&list);
   }
 
   return res;
 }
 
-void _lex(LexerState *state) {
+bool _lex(LexerState *state) {
   while (!eof(state)) {
     skipWhitespace(state);
     char next = peek(state);
@@ -87,11 +84,12 @@ void _lex(LexerState *state) {
     } else if (next == ':') {
       lexSingleChar(state, TOKEN_COLON);
     } else if (eof(state)) {
-      return;
+      return true;
     } else {
       FAIL(state, "Unkown character '%c' at %d:%d", next, state->row, state->col);
     }
   }
+  return true;
 }
 
 char isDigit(char n) {
@@ -132,7 +130,7 @@ void skipWhitespace(LexerState *state) {
   }
 }
 
-void lexWord(LexerState *state, char *word, TokenType type) {
+bool lexWord(LexerState *state, char *word, TokenType type) {
   int startRow = state->row;
   int startCol = state->col;
 
@@ -156,18 +154,21 @@ void lexWord(LexerState *state, char *word, TokenType type) {
   token->tokenType = type;
   token->col = startCol;
   token->row = startRow;
+  return true;
 }
 
-void lexTrue(LexerState *state) {
-  lexWord(state, "true", TOKEN_BOOL_LITERAL);
+bool lexTrue(LexerState *state) {
+  TRY(lexWord(state, "true", TOKEN_BOOL_LITERAL));
   Token *currToken = &state->tokenList->tokens[state->tokenList->length - 1];
   currToken->data.TOKEN_BOOL_LITERAL.boolean = true;
+  return true;
 }
 
-void lexFalse(LexerState *state) {
-  lexWord(state, "false", TOKEN_BOOL_LITERAL);
+bool lexFalse(LexerState *state) {
+  TRY(lexWord(state, "false", TOKEN_BOOL_LITERAL));
   Token *currToken = &state->tokenList->tokens[state->tokenList->length - 1];
   currToken->data.TOKEN_BOOL_LITERAL.boolean = false;
+  return true;
 }
 
 void lexSingleChar(LexerState *state, TokenType type) {
@@ -201,7 +202,7 @@ void lexNumber(LexerState *state) {
 }
 
 // TODO This does not handle escape characters (\n, \" etc)
-void lexString(LexerState *state) {
+bool lexString(LexerState *state) {
   int startRow = state->row;
   int startCol = state->col;
 
@@ -228,6 +229,7 @@ void lexString(LexerState *state) {
   token->data.TOKEN_STRING_LITERAL.string = copiedStr;
   token->row = startRow;
   token->col = startCol;
+  return true;
 }
 
 void sprintTokenType(char *dest, TokenType type) {

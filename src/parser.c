@@ -35,17 +35,19 @@ ParserResult parse(char *input) {
   LexResult lexed = lex(input);
   ParserResult result;
 
-  if (lexed.status < 0) {
+  if (lexed.status == LEXER_FAIL) {
     result.status = PARSER_FAIL;
-    strcpy(result.result.PARSER_ERROR.errorMsg, lexed.errorMsg);
+    strcpy(result.result.PARSER_ERROR.errorMsg, lexed.result.LEXER_FAIL.errorMsg);
     return result;
   }
+
+  TokenList tokenList = lexed.result.LEXER_SUCCESS.tokenList;
 
   JSONNode *root = malloc(sizeof(JSONNode));
   ParserState state = {
     .current_node = root,
-    .current_token = lexed.tokenList.tokens,
-    .tokens_end = lexed.tokenList.tokens + lexed.tokenList.length,
+    .current_token = tokenList.tokens,
+    .tokens_end = tokenList.tokens + tokenList.length,
     .depth = 0,
     .errorMsg = "",
   };
@@ -55,7 +57,7 @@ ParserResult parse(char *input) {
   if (status) {
     result.status = PARSER_SUCCESS;
     result.result.PARSER_SUCCESS.tree = root;
-    TokenList_free(&lexed.tokenList);
+    TokenList_free(&tokenList);
   } else {
     result.status = PARSER_FAIL;
     strcpy(result.result.PARSER_ERROR.errorMsg, state.errorMsg);

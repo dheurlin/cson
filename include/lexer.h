@@ -45,13 +45,17 @@ typedef struct {
   int row;
   int col;
   char errorMsg[MAX_ERR_SIZE];
-  int status;
 } LexerState;
 
 typedef struct {
-  int status;
-  char errorMsg[MAX_ERR_SIZE];
-  struct TokenList tokenList;
+  enum {
+    LEXER_SUCCESS,
+    LEXER_FAIL,
+  } status;
+  union {
+    struct LEXER_SUCCESS { TokenList tokenList;         } LEXER_SUCCESS;
+    struct LEXER_FAIL    { char errorMsg[MAX_ERR_SIZE]; } LEXER_FAIL;
+  } result;
 } LexResult;
 
 // Does not take ownership of the input, caller must deallocate. On failure, frees its partial `TokenList`.
