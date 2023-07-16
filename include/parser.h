@@ -28,15 +28,34 @@ struct JSONNode {
   char *fieldName;
 };
 
+#define PARSER_ERROR_MAX_SIZE 256
+
 typedef struct {
   Token *current_token;
   Token *tokens_end;
   JSONNode *current_node;
   int depth;
+  char errorMsg[PARSER_ERROR_MAX_SIZE];
 } ParserState;
 
-// Does not take ownership of the input, caller must deallocate
-JSONNode *parse(char *input);
+typedef struct {
+  enum {
+    PARSER_SUCCESS,
+    PARSER_FAIL,
+  } status;
+  union {
+    struct PARSER_SUCCESS {
+      JSONNode *tree;
+    } PARSER_SUCCESS;
+    struct PARSER_FAIL {
+      char errorMsg[PARSER_ERROR_MAX_SIZE];
+    } PARSER_ERROR;
+  } result;
+} ParserResult;
+
+// Does not take ownership of the input, caller must deallocate. On failure, will free its partial `JSONNode`.
+// On success, ownership of the returned `JSONNode` is transferred to the caller who must free it using `JSONNode_free`.
+ParserResult parse(char *input);
 void printTree(JSONNode *root);
 void JSONNode_free(JSONNode *node);
 void _JSONNode_free(JSONNode *node, bool inList);

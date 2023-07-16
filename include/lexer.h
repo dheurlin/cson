@@ -54,11 +54,13 @@ typedef struct {
   struct TokenList tokenList;
 } LexResult;
 
-// Does not take ownership of the input, caller must deallocate
+// Does not take ownership of the input, caller must deallocate. On failure, frees its partial `TokenList`.
+// On success, ownership of the `TokenList` transfers to the caller, who must free it using `TokenList_free`
 LexResult lex(char *input);
 
 void printToken(Token *token);
 void printTokenType(TokenType type);
+void sprintTokenType(char *dest, TokenType type);
 #define printTokenLn(token) do { printToken(token); printf("\n"); } while(0);
 
 void TokenList_free(TokenList *list);

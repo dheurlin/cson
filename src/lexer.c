@@ -50,7 +50,11 @@ LexResult lex(char *input) {
     .tokenList = list,
     .status = state.status,
   };
-  strcpy(res.errorMsg, state.errorMsg);
+
+  if (state.status < 0) {
+    strcpy(res.errorMsg, state.errorMsg);
+    TokenList_free(&list);
+  }
 
   return res;
 }
@@ -85,7 +89,7 @@ void _lex(LexerState *state) {
     } else if (eof(state)) {
       return;
     } else {
-      FAIL(state, "Unkown character '%c' at %d:%d\n", next, state->row, state->col);
+      FAIL(state, "Unkown character '%c' at %d:%d", next, state->row, state->col);
     }
   }
 }
@@ -138,14 +142,14 @@ void lexWord(LexerState *state, char *word, TokenType type) {
   for (int i = 0; i < len; i++) {
     nextChar = next(state);
     if (nextChar == '\0') {
-      FAIL(state, "Expected \"%s\" at %d:%d\n", word, startRow, startCol);
+      FAIL(state, "Expected \"%s\" at %d:%d", word, startRow, startCol);
     }
     localStr[i] = nextChar;
   }
   localStr[len] = '\0';
 
   if (strcmp(localStr, word) != 0) {
-    FAIL(state, "Expected \"%s\" at %d:%d\n", word, startRow, startCol);
+    FAIL(state, "Expected \"%s\" at %d:%d", word, startRow, startCol);
   }
 
   Token *token = TokenList_insertNew(state->tokenList);
@@ -214,7 +218,7 @@ void lexString(LexerState *state) {
   }
 
   if (eof(state) || next_char == '\n') {
-    FAIL(state, "Unterminated string literal at %d:%d\n", startRow, startCol);
+    FAIL(state, "Unterminated string literal at %d:%d", startRow, startCol);
   }
 
   char *copiedStr = malloc(strLen + 1);
@@ -226,48 +230,54 @@ void lexString(LexerState *state) {
   token->col = startCol;
 }
 
-void printTokenType(TokenType type) {
+void sprintTokenType(char *dest, TokenType type) {
   switch (type) {
     case TOKEN_NUMBER_LITERAL:
-      printf("Number literal");
+      sprintf(dest, "%s", "Number literal");
       break;
 
     case TOKEN_NULL_LITERAL:
-      printf("Null literal");
+      sprintf(dest, "%s", "Null literal");
       break;
 
     case TOKEN_BOOL_LITERAL:
-      printf("Boolean literal");
+      sprintf(dest, "%s", "Boolean literal");
       break;
 
     case TOKEN_STRING_LITERAL:
-      printf("String literal");
+      sprintf(dest, "%s", "String literal");
       break;
 
     case TOKEN_COLON:
-      printf(":");
+      sprintf(dest, "%s", ":");
       break;
 
     case TOKEN_COMMA:
-      printf(",");
+      sprintf(dest, "%s", ",");
       break;
 
     case TOKEN_OPEN_SQUARE:
-      printf("[");
+      sprintf(dest, "%s", "[");
       break;
 
     case TOKEN_CLOSE_SQUARE:
-      printf("]");
+      sprintf(dest, "%s", "]");
       break;
 
     case TOKEN_OPEN_CURLY:
-      printf("{");
+      sprintf(dest, "%s", "{");
       break;
 
     case TOKEN_CLOSE_CURLY:
-      printf("}");
+      sprintf(dest, "%s", "}");
       break;
   }
+}
+
+void printTokenType(TokenType type) {
+  char dest[32];
+  sprintTokenType(dest, type);
+  printf("%s", dest);
 }
 
 void printToken(Token *token) {

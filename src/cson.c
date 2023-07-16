@@ -29,10 +29,14 @@ int main(int argc, char *argv[]) {
   char input[MAXBUFLEN + 1];
   size_t file_len = read_whole_file(fp, argv[2], input);
 
-  JSONNode *parsed = parse(input);
+  ParserResult res = parse(input);
+  if (res.status == PARSER_SUCCESS) {
+    JSONNode *tree = res.result.PARSER_SUCCESS.tree;
+    printTree(tree);
+    JSONNode_free(res.result.PARSER_SUCCESS.tree);
+  } else {
+    printf("Parsing failed: %s\n", res.result.PARSER_ERROR.errorMsg);
+  }
 
-  printTree(parsed);
-
-  JSONNode_free(parsed);
   fclose(fp);
 }

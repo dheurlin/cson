@@ -6,32 +6,40 @@
 #include "nodelist.h"
 #include "lexer.h"
 
-static void _parse(ParserState *state);
+static bool _parse(ParserState *state);
 void parseNull(ParserState *state);
 void parseBool(ParserState *state);
 void parseNumber(ParserState *state);
 void parseString(ParserState *state);
-void parseList(ParserState *state);
-void parseObject(ParserState *state);
+bool parseList(ParserState *state);
+bool parseObject(ParserState *state);
 bool eof(ParserState *state);
-void consume(ParserState *state, TokenType type);
-void expect(ParserState *state, TokenType type);
-void expectEof(ParserState *state);
+bool consume(ParserState *state, TokenType type);
+bool expect(ParserState *state, TokenType type);
+bool expectEof(ParserState *state);
 TokenType peekTokenType(ParserState *state);
 Token *nextToken(ParserState *state);
 Token peekToken(ParserState *state);
 
-JSONNode *parse(char *input) {
+#define FAIL(state, args...) do {\
+  sprintf(state->errorMsg, args);\
+  return false;\
+} while(0);
+
+#define TRY(cmd) do {\
+  if (!cmd) return false;\
+} while(0);
+
+
+ParserResult parse(char *input) {
   LexResult lexed = lex(input);
+  ParserResult result;
 
   if (lexed.status < 0) {
-    DIE("[LEXER] %s", lexed.errorMsg);
-    // TODO free TokenList?
+    result.status = PARSER_FAIL;
+    strcpy(result.result.PARSER_ERROR.errorMsg, lexed.errorMsg);
+    return result;
   }
-
-  // for(int i = 0; i < lexed.tokenList.length; i++) {
-  //   printTokenLn(&lexed.tokenList.tokens[i]);
-  // }
 
   JSONNode *root = malloc(sizeof(JSONNode));
   ParserState state = {
@@ -39,15 +47,25 @@ JSONNode *parse(char *input) {
     .current_token = lexed.tokenList.tokens,
     .tokens_end = lexed.tokenList.tokens + lexed.tokenList.length,
     .depth = 0,
+    .errorMsg = "",
   };
 
-  _parse(&state);
+  bool status = _parse(&state);
 
-  TokenList_free(&lexed.tokenList);
-  return root;
+  if (status) {
+    result.status = PARSER_SUCCESS;
+    result.result.PARSER_SUCCESS.tree = root;
+    TokenList_free(&lexed.tokenList);
+  } else {
+    result.status = PARSER_FAIL;
+    strcpy(result.result.PARSER_ERROR.errorMsg, state.errorMsg);
+    JSONNode_free(root);
+  }
+
+  return result;
 }
 
-static void _parse(ParserState *state) {
+static bool _parse(ParserState *state) {
   Token next = *state->current_token;
   switch (next.tokenType) {
     case TOKEN_NULL_LITERAL:
@@ -67,21 +85,24 @@ static void _parse(ParserState *state) {
       break;
 
     case TOKEN_OPEN_SQUARE:
-      parseList(state);
+      TRY(parseList(state));
       break;
 
     case TOKEN_OPEN_CURLY:
-      parseObject(state);
+      TRY(parseObject(state));
       break;
 
-    default:
-      printf("Unexpected token at %d:%d: ", next.row, next.col); printTokenType(next.tokenType); printf("\n");
-      DIE("Aborting\n");
+    default: {
+      char tokenType[32];
+      sprintTokenType(tokenType, next.tokenType);
+      FAIL(state, "Unexpected token at %d:%d: %s", next.row, next.col, tokenType);
+    }
   }
 
   if (state->depth == 0) {
-    expectEof(state);
+    TRY(expectEof(state));
   }
+  return true;
 }
 
 void parseNull(ParserState *state) {
@@ -109,9 +130,9 @@ void parseBool(ParserState *state) {
   node->data.JSON_BOOL.boolean = contents;
 }
 
-void parseList(ParserState *state) {
+bool parseList(ParserState *state) {
   state->depth++;
-  consume(state, TOKEN_OPEN_SQUARE);
+  TRY(consume(state, TOKEN_OPEN_SQUARE));
 
   JSONNode *node = state->current_node;
   NodeList *nodeList = NodeList_new();
@@ -121,23 +142,24 @@ void parseList(ParserState *state) {
   while (!eof(state) && peekTokenType(state) != TOKEN_CLOSE_SQUARE) {
     JSONNode *elem = NodeList_insertNew(nodeList);
     state->current_node = elem;
-    _parse(state);
+    TRY(_parse(state));
 
     if (peekTokenType(state) == TOKEN_CLOSE_SQUARE || eof(state)) {
       break;
     }
     // This allows a trailing comma, could be fixed but why not keep it?
-    consume(state, TOKEN_COMMA);
+    TRY(consume(state, TOKEN_COMMA));
   }
 
-  consume(state, TOKEN_CLOSE_SQUARE);
+  TRY(consume(state, TOKEN_CLOSE_SQUARE));
   state->depth--;
   state->current_node = node;
+  return true;
 }
 
-void parseObject(ParserState *state) {
+bool parseObject(ParserState *state) {
   state->depth++;
-  consume(state, TOKEN_OPEN_CURLY);
+  TRY(consume(state, TOKEN_OPEN_CURLY));
 
   JSONNode *node = state->current_node;
   NodeList *nodeList = NodeList_new();
@@ -145,26 +167,27 @@ void parseObject(ParserState *state) {
   node->data.JSON_OBJECT.nodes = nodeList;
 
   while (!eof(state) && peekTokenType(state) != TOKEN_CLOSE_CURLY) {
-    expect(state, TOKEN_STRING_LITERAL);
+    TRY(expect(state, TOKEN_STRING_LITERAL));
     char *name = nextToken(state)->data.TOKEN_STRING_LITERAL.string;
 
-    consume(state, TOKEN_COLON);
+    TRY(consume(state, TOKEN_COLON));
 
     JSONNode *elem = NodeList_insertNew(nodeList);
     state->current_node = elem;
-    _parse(state);
+    TRY(_parse(state));
     elem->fieldName = strdup(name);
 
     if (peekTokenType(state) == TOKEN_CLOSE_CURLY || eof(state)) {
       break;
     }
     // This allows a trailing comma, could be fixed but why not keep it?
-    consume(state, TOKEN_COMMA);
+    TRY(consume(state, TOKEN_COMMA));
   }
 
-  consume(state, TOKEN_CLOSE_CURLY);
+  TRY(consume(state, TOKEN_CLOSE_CURLY));
   state->depth--;
   state->current_node = node;
+  return true;
 }
 
 bool eof(ParserState *state) {
@@ -184,26 +207,32 @@ Token *nextToken(ParserState *state) {
   return next;
 }
 
-void expect(ParserState *state, TokenType type) {
+bool expect(ParserState *state, TokenType type) {
   Token next = peekToken(state);
   if (eof(state) || peekTokenType(state) != type) {
-    printf("Expecting "); printTokenType(type); 
-    if (eof(state)) printf(" at end of string\n");
-    else            printf(" at %d:%d\n", next.row, next.col);
-    DIE("aborting\n");
+    char tokenType[32];
+    sprintTokenType(tokenType, type);
+    if (eof(state)) {
+      FAIL(state, "Expecting %s at end of input", tokenType);
+    } else {
+      FAIL(state, "Expecting %s at %d:%d", tokenType, next.row, next.col);
+    }
   }
+  return true;
 }
 
-void expectEof(ParserState *state) {
+bool expectEof(ParserState *state) {
   if (!eof(state)) {
     Token next = peekToken(state);
-    DIE("Trailing tokens at %d:%d, missmatched braces?\n", next.row, next.col);
+    FAIL(state, "Trailing tokens at %d:%d, missmatched braces?", next.row, next.col);
   }
+  return true;
 }
 
-void consume(ParserState *state, TokenType type) {
-  expect(state, type);
+bool consume(ParserState *state, TokenType type) {
+  TRY(expect(state, type));
   nextToken(state);
+  return true;
 }
 
 #define indentDepth 2 
@@ -277,6 +306,9 @@ void JSONNode_free(JSONNode *root) {
 }
 
 void _JSONNode_free(JSONNode *ptr, bool inList) {
+  if (ptr == NULL) {
+    return;
+  }
   JSONNode node = *ptr;
   switch (node.tag) {
     case JSON_NULL:
@@ -287,7 +319,7 @@ void _JSONNode_free(JSONNode *ptr, bool inList) {
     case JSON_STRING: {
       struct JSON_STRING data = node.data.JSON_STRING;
       char *str = data.string;
-      free(str);
+      if (str != NULL) free(str);
       break;
     }
 
