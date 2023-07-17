@@ -48,6 +48,19 @@ typedef struct PointList {
   int len;
 } PointList;
 
+typedef struct PersonList {
+  Person *persons;
+  int count;
+} PersonList;
+
+typedef struct Family {
+  Person father;
+  Person mother;
+  PersonList children;
+} Family;
+
+char *familyStr = "{\"father\":{\"firstName\":\"Walter\",\"lastName\":\"White\",\"age\":52},\"mother\":{\"firstName\":\"Skyler\",\"lastName\":\"White\",\"age\":36},\"children\":[{\"firstName\":\"Walter Jr.\",\"lastName\":\"White\",\"age\":16},{\"firstName\":\"Holly\",\"lastName\":\"White\",\"age\":0}]}";
+
 void decodePoint(DecoderState *state, void *dest) {
   Point *point = (Point*)dest;
   decodeFields(state, 2, 
@@ -75,6 +88,22 @@ void decodePointList(DecoderState *state, void *dest) {
   decodeList(state, &pointList->points, &pointList->len, sizeof(Point), decodePoint);
 }
 
+void decodePersonList(DecoderState *state, void *dest) {
+  PersonList *personList = (PersonList*)dest;
+  decodeList(state, &personList->persons, &personList->count, sizeof(Person), decodePerson);
+}
+
+void decodeFamily(DecoderState *state, void *dest) {
+  Family *family = (Family*)dest;
+  decodeFields(state, 3,
+    makeField("father", &family->father, decodePerson),
+    makeField("mother", &family->mother, decodePerson),
+    makeField("children", &family->children, decodePersonList)
+  );
+}
+
+// TODO Decodelist doesn't compose nicely with fields, maybe a special makeField for lists
+// that would allow us to define the list type in-line?
 int main() {
   Point decodedPoint;
   decode(pointStr, &decodedPoint, decodePoint);
@@ -107,6 +136,19 @@ int main() {
   printf("Decoded list of points: \n");
   for (int i = 0; i < pointList.len; i++) {
     printPoint(pointList.points[i]);
+  }
+  printf("\n");
+
+  // --------------
+  Family family;
+  decode(familyStr, &family, decodeFamily);
+
+  printf("Decoded family: \n");
+  printf("Father: "); printPerson(family.father);
+  printf("Mother: "); printPerson(family.mother);
+  printf("Children: \n");
+  for (int i = 0; i < family.children.count; i++) {
+    printf("  "); printPerson(family.children.persons[i]);
   }
 
   return 1;
