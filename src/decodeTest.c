@@ -41,6 +41,13 @@ void printNumberList(NumberList list) {
   }
 }
 
+char *pointListStr = "[{ \"x\": 19, \"y\": 95 }, { \"x\": 4, \"y\": 20 }, { \"x\": 18, \"y\": 99 }]";
+
+typedef struct PointList {
+  Point *points;
+  int len;
+} PointList;
+
 void decodePoint(DecoderState *state, void *dest) {
   Point *point = (Point*)dest;
   decodeFields(state, 2, 
@@ -61,6 +68,11 @@ void decodePerson(DecoderState *state, void *dest) {
 void decodeNumberList(DecoderState *state, void *dest) {
   NumberList *numberList = (NumberList*)dest;
   decodeList(state, sizeof(int), &numberList->numbers, &numberList->length, decodeInt);
+}
+
+void decodePointList(DecoderState *state, void *dest) {
+  PointList *pointList = (PointList*)dest;
+  decodeList(state, sizeof(Point), &pointList->points, &pointList->len, decodePoint);
 }
 
 int main() {
@@ -87,6 +99,15 @@ int main() {
   printf("Decoded list: \n");
   printNumberList(numberList);
   printf("\n");
+
+  // --------------
+  PointList pointList;
+  decode(pointListStr, &pointList, decodePointList);
+
+  printf("Decoded list of points: \n");
+  for (int i = 0; i < pointList.len; i++) {
+    printPoint(pointList.points[i]);
+  }
 
   return 1;
 }
