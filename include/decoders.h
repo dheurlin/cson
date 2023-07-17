@@ -21,7 +21,7 @@ void decodeFloat(DecoderState *state, void *dest);
 void decodeString(DecoderState *state, void *dest);
 FieldDef makeField(char *name, void *dest, decodeFun decoder);
 void decodeFields(DecoderState *state, int count, ...);
-void decodeList(DecoderState *state, size_t size, void *dest, int *length, decodeFun decoder);
+void decodeList(DecoderState *state, void *dest, int *length, size_t size, decodeFun decoder);
 void decode(char *input, void *dest, decodeFun decoder);
 
 #endif

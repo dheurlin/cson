@@ -67,12 +67,12 @@ void decodePerson(DecoderState *state, void *dest) {
 
 void decodeNumberList(DecoderState *state, void *dest) {
   NumberList *numberList = (NumberList*)dest;
-  decodeList(state, sizeof(int), &numberList->numbers, &numberList->length, decodeInt);
+  decodeList(state, &numberList->numbers, &numberList->length, sizeof(int), decodeInt);
 }
 
 void decodePointList(DecoderState *state, void *dest) {
   PointList *pointList = (PointList*)dest;
-  decodeList(state, sizeof(Point), &pointList->points, &pointList->len, decodePoint);
+  decodeList(state, &pointList->points, &pointList->len, sizeof(Point), decodePoint);
 }
 
 int main() {

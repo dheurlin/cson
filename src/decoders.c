@@ -87,7 +87,7 @@ void decodeFields(DecoderState *state, int count, ...) {
   va_end(ap);
 }
 
-void decodeList(DecoderState *state, size_t size, void *dest, int *length, decodeFun decoder) {
+void decodeList(DecoderState *state, void *dest, int *length, size_t size, decodeFun decoder) {
   if (state->currentNode->tag != JSON_LIST) {
     FAIL("Expecting object");
   }
