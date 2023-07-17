@@ -7,7 +7,6 @@ project(cson C)
 include_directories(include)
 
 set(SOURCES
-  src/cson.c
   src/lexer.c
   src/parser.c
   src/nodelist.c
@@ -17,4 +16,8 @@ set(SOURCES
   include/nodelist.h
 )
 
-add_executable(cson ${SOURCES})
+add_executable(cson src/cson.c ${SOURCES})
+add_executable(decodeTest src/decodeTest.c ${SOURCES})
+
+target_link_libraries(decodeTest m)
+

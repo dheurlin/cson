@@ -12,4 +12,5 @@ _deps
 .cmake/
 .cache/
 cson
+decodeTest
 core*
