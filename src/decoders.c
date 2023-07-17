@@ -87,6 +87,26 @@ void decodeFields(DecoderState *state, int count, ...) {
   va_end(ap);
 }
 
+void decodeList(DecoderState *state, size_t size, void *dest, int *length, decodeFun decoder) {
+  if (state->currentNode->tag != JSON_LIST) {
+    FAIL("Expecting object");
+  }
+  JSONNode *currentNode = state->currentNode;
+  NodeList *nodeList = currentNode->data.JSON_LIST.nodes;
+
+  void **listDest = (void**)dest;
+  *listDest = malloc(nodeList->length * size),
+
+  *length = nodeList->length;
+
+  for (int i = 0; i < *length; i++) {
+    JSONNode *item = &nodeList->items[i];
+    state->currentNode = item;
+    decoder(state, *listDest + (size * i));
+  }
+  state->currentNode = currentNode;
+}
+
 void decode(char *input, void *dest, decodeFun decoder) {
   ParserResult parseResult = parse(input);
   if (parseResult.status != PARSER_SUCCESS) {
