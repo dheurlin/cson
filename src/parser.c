@@ -30,7 +30,6 @@ Token peekToken(ParserState *state);
   if (!cmd) return false;\
 } while(0);
 
-
 ParserResult parse(char *input) {
   LexResult lexed = lex(input);
   ParserResult result;

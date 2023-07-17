@@ -11,13 +11,16 @@ set(SOURCES
   src/parser.c
   src/nodelist.c
   src/tokenlist.c
+  src/decoders.c
   include/lexer.h
   include/parser.h
   include/nodelist.h
+  include/decoders.h
 )
 
 add_executable(cson src/cson.c ${SOURCES})
 add_executable(decodeTest src/decodeTest.c ${SOURCES})
 
-target_link_libraries(decodeTest m)
+target_link_libraries(decodeTest PUBLIC m)
+target_link_libraries(cson PUBLIC m)
 
