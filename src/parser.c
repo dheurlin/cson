@@ -42,7 +42,9 @@ ParserResult parse(char *input) {
 
   TokenList tokenList = lexed.result.LEXER_SUCCESS.tokenList;
 
-  JSONNode *root = malloc(sizeof(JSONNode));
+  JSONNode *root = calloc(1, sizeof(JSONNode));
+  root->fieldName = NULL;
+
   ParserState state = {
     .current_node = root,
     .current_token = tokenList.tokens,
