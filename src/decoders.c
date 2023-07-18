@@ -54,23 +54,49 @@ JSONNode *findField(NodeList *list, char *name) {
   return NULL;
 }
 
-void decodeField(DecoderState *state, void *dest, char *name, decodeFun decoder) {
+void decodeField(DecoderState *state, FieldDef field) {
   JSONNode *current = state->currentNode;
-  JSONNode *field = findField(current->data.JSON_OBJECT.nodes, name);
-  if (field == NULL) {
-    FAIL("No field with name \"%s\" was found", name);
+  JSONNode *node = findField(current->data.JSON_OBJECT.nodes, field.name);
+
+  if (node == NULL) {
+    FAIL("No field with name \"%s\" was found", field.name);
   }
-  state->currentNode = field;
-  decoder(state, dest);
+
+  state->currentNode = node;
+
+  switch (field.type) {
+    case NORMAL_FIELD: {
+      struct NORMAL_FIELD data = field.data.NORMAL_FIELD;
+      data.decoder(state, data.dest);
+      break;
+    }
+
+    case LIST_FIELD: {
+      struct LIST_FIELD data = field.data.LIST_FIELD;
+      decodeList(state, data.dest, data.lengthDest, data.size, data.decoder);
+      break;
+    }
+  }
+
   state->currentNode = current;
 }
 
 FieldDef makeField(char *name, void *dest, decodeFun decoder) {
-  return (FieldDef){
-    .name = name,
-    .dest = dest,
-    .decoder = decoder,
-  };
+  FieldDef field = { .type = NORMAL_FIELD };
+  field.data.NORMAL_FIELD.decoder = decoder;
+  field.data.NORMAL_FIELD.dest = dest;
+  field.name = name;
+  return field;
+}
+
+FieldDef makeListField(char *name, void *dest, int *lengthDest, size_t size, decodeFun decoder) {
+  FieldDef field = { .type = LIST_FIELD };
+  field.data.LIST_FIELD.decoder = decoder;
+  field.data.LIST_FIELD.dest = dest;
+  field.name = name;
+  field.data.LIST_FIELD.lengthDest = lengthDest;
+  field.data.LIST_FIELD.size = size;
+  return field;
 }
 
 void decodeFields(DecoderState *state, int count, ...) {
@@ -82,7 +108,7 @@ void decodeFields(DecoderState *state, int count, ...) {
   va_start(ap, count);
   for (int i = 0; i < count; i++) {
     FieldDef field = va_arg(ap, FieldDef);
-    decodeField(state, field.dest, field.name, field.decoder);
+    decodeField(state, field);
   }
   va_end(ap);
 }
