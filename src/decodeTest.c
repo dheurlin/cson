@@ -16,16 +16,16 @@ void printPoint(Point point) {
   printf("Point { .x = %d, .y = %d }\n", point.x, point.y);
 }
 
-char *personStr = "{\n  \"firstName\": \"Walter\",\n  \"lastName\" : \"White\",\n  \"age\": 52.4\n}";
+char *personStr = "{\n  \"firstName\": \"Walter\",\n  \"lastName\" : \"White\",\n  \"age\": 52\n}";
 
 typedef struct Person {
   char *firstName;
   char *lastName;
-  double age;
+  int age;
 } Person;
 
 void printPerson(Person person) {
-  printf("%s %s, %f\n", person.firstName, person.lastName, person.age);
+  printf("%s %s, %d\n", person.firstName, person.lastName, person.age);
 }
 
 char *numbersStr = "[1, 2, 3, 4, 5]";
@@ -70,7 +70,7 @@ void decodePerson(DecoderState *state, void *dest) {
   decodeFields(state, 3,
     makeField("firstName", &person->firstName, decodeString),
     makeField("lastName", &person->lastName, decodeString),
-    makeField("age", &person->age, decodeFloat)
+    makeField("age", &person->age, decodeInt)
   );
 }
 
