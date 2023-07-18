@@ -115,7 +115,7 @@ void decodeFields(DecoderState *state, int count, ...) {
 
 void decodeList(DecoderState *state, void *dest, int *length, size_t size, decodeFun decoder) {
   if (state->currentNode->tag != JSON_LIST) {
-    FAIL("Expecting object");
+    FAIL("Expecting list");
   }
   JSONNode *currentNode = state->currentNode;
   NodeList *nodeList = currentNode->data.JSON_LIST.nodes;
