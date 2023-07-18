@@ -53,8 +53,8 @@ typedef struct {
   } result;
 } ParserResult;
 
-// Does not take ownership of the input, caller must deallocate. On failure, will free its partial `JSONNode`.
-// On success, ownership of the returned `JSONNode` is transferred to the caller who must free it using `JSONNode_free`.
+// Does not take ownership of the input, caller must deallocate. On failure, will deallocate its partial `JSONNode`.
+// On success, ownership of the returned `JSONNode` is transferred to the caller who must deallocate it using `JSONNode_free`.
 ParserResult parse(char *input);
 void printTree(JSONNode *root);
 void JSONNode_free(JSONNode *node);
