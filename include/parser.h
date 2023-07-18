@@ -9,7 +9,7 @@ struct NodeList;
 typedef struct JSONNode JSONNode;
 
 struct JSONNode {
-  enum {
+  enum JSONNode_Tag {
     JSON_NUMBER,
     JSON_STRING,
     JSON_BOOL,
@@ -59,5 +59,6 @@ ParserResult parse(char *input);
 void printTree(JSONNode *root);
 void JSONNode_free(JSONNode *node);
 void _JSONNode_free(JSONNode *node, bool inList);
+char *nodeTagToString(enum JSONNode_Tag tag);
 
 #endif

@@ -302,6 +302,17 @@ void _printTree(int indentLevel, JSONNode *tree) {
   }
 }
 
+char *nodeTagToString(enum JSONNode_Tag tag) {
+  switch (tag) {
+    case JSON_NUMBER: return "number";
+    case JSON_STRING: return "string";
+    case JSON_BOOL: return "bool";
+    case JSON_NULL: return "null";
+    case JSON_OBJECT: return "object";
+    case JSON_LIST: return "list";
+  }
+}
+
 void JSONNode_free(JSONNode *root) {
   _JSONNode_free(root, false);
 }

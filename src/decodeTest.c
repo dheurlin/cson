@@ -1,5 +1,6 @@
 #include "decoders.h"
 #include "stdio.h"
+#include <stdlib.h>
 
 char *pointStr =
 "{\n\
@@ -57,36 +58,38 @@ typedef struct Family {
 
 char *familyStr = "{\"father\":{\"firstName\":\"Walter\",\"lastName\":\"White\",\"age\":52},\"mother\":{\"firstName\":\"Skyler\",\"lastName\":\"White\",\"age\":36},\"children\":[{\"firstName\":\"Walter Jr.\",\"lastName\":\"White\",\"age\":16},{\"firstName\":\"Holly\",\"lastName\":\"White\",\"age\":0}]}";
 
-void decodePoint(DecoderState *state, void *dest) {
+char *familyStrWrong = "{\"father\":{\"firstName\":\"Walter\",\"lastName\":\"White\",\"age\":52},\"mother\":{\"firstName\":\"Skyler\",\"lastName\":\"White\",\"age\":36},\"children\":[{\"firstName\":\"Walter Jr.\",\"lastName\":\"White\",\"age\":16},{\"firstName\":\"Holly\",\"lastName\":\"White\",\"age\": \"hello\"}]}";
+
+bool decodePoint(DecoderState *state, void *dest) {
   Point *point = (Point*)dest;
-  decodeFields(state, 2, 
+  return decodeFields(state, 2, 
     makeField("x", &point->x, decodeInt),
     makeField("y", &point->y, decodeInt)
   );
 }
 
-void decodePerson(DecoderState *state, void *dest) {
+bool decodePerson(DecoderState *state, void *dest) {
   Person *person = (Person*)dest;
-  decodeFields(state, 3,
+  return decodeFields(state, 3,
     makeField("firstName", &person->firstName, decodeString),
     makeField("lastName", &person->lastName, decodeString),
     makeField("age", &person->age, decodeInt)
   );
 }
 
-void decodeNumberList(DecoderState *state, void *dest) {
+bool decodeNumberList(DecoderState *state, void *dest) {
   NumberList *numberList = (NumberList*)dest;
-  decodeList(state, &numberList->numbers, &numberList->length, sizeof(int), decodeInt);
+  return decodeList(state, &numberList->numbers, &numberList->length, sizeof(int), decodeInt);
 }
 
-void decodePointList(DecoderState *state, void *dest) {
+bool decodePointList(DecoderState *state, void *dest) {
   PointList *pointList = (PointList*)dest;
-  decodeList(state, &pointList->points, &pointList->len, sizeof(Point), decodePoint);
+  return decodeList(state, &pointList->points, &pointList->len, sizeof(Point), decodePoint);
 }
 
-void decodeFamily(DecoderState *state, void *dest) {
+bool decodeFamily(DecoderState *state, void *dest) {
   Family *family = (Family*)dest;
-  decodeFields(state, 3,
+  return decodeFields(state, 3,
     makeField("father", &family->father, decodePerson),
     makeField("mother", &family->mother, decodePerson),
     makeListField("children", &family->children, &family->childCount, sizeof(Person), decodePerson)
@@ -129,8 +132,14 @@ int main() {
   printf("\n");
 
   // --------------
+
   Family family;
-  decode(familyStr, &family, decodeFamily);
+  DecodeResult res = decode(familyStr, &family, decodeFamily);
+
+  if(!res.success) {
+    printDecoderError(res.error);
+    exit(-1);
+  }
 
   printf("Decoded family: \n");
   printf("Father: "); printPerson(family.father);
@@ -138,6 +147,16 @@ int main() {
   printf("Children: \n");
   for (int i = 0; i < family.childCount; i++) {
     printf("  "); printPerson(family.children[i]);
+  }
+
+  // --------------
+
+  Family wrongFam;
+  DecodeResult wrongFamRes = decode(familyStrWrong, &wrongFam, decodeFamily);
+
+  if (!wrongFamRes.success) {
+    printDecoderError(wrongFamRes.error);
+    exit(-1);
   }
 
   return 1;
