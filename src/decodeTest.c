@@ -160,6 +160,7 @@ int main() {
 
   if (!wrongFamRes.success) {
     printDecoderError(wrongFamRes.error);
+    DecodeError_free(wrongFamRes.error);
     exit(-1);
   }
 

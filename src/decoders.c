@@ -8,6 +8,8 @@
 #include "parser.h"
 #include "nodelist.h"
 
+void setDecoderPath(DecoderError *error, int depth, JSONPath jPath);
+
 #define FAIL(state, args...) do {\
     sprintf(state->error.errorMsg, args);\
     return false;\
@@ -64,10 +66,14 @@ bool decodeField(DecoderState *state, FieldDef field) {
     FAIL(state, "Max depth %d exceded", DECODER_MAX_DEPTH);
   }
 
-  state->error.path[state->error.depth++] = (JSONPath) {
+  // state->error.path[state->error.depth++] = (JSONPath) {
+  //   .tag = JSON_FIELD,
+  //   .data = { .JSON_FIELD = { .fieldName = field.name } }
+  // };
+  setDecoderPath(&state->error, state->error.depth++, (JSONPath) {
     .tag = JSON_FIELD,
     .data = { .JSON_FIELD = { .fieldName = field.name } }
-  };
+  });
 
   if (node == NULL) {
     FAIL(state, "No field with name \"%s\" was found", field.name);
@@ -101,21 +107,27 @@ bool decodeField(DecoderState *state, FieldDef field) {
 }
 
 FieldDef makeField(char *name, void *dest, decodeFun decoder) {
-  FieldDef field = { .type = NORMAL_FIELD };
-  field.data.NORMAL_FIELD.decoder = decoder;
-  field.data.NORMAL_FIELD.dest = dest;
-  field.name = name;
-  return field;
+  return (FieldDef) {
+    .type = NORMAL_FIELD,
+    .name = name,
+    .data = { .NORMAL_FIELD = { 
+      .dest = dest,
+      .decoder = decoder,
+    } }
+  };
 }
 
 FieldDef makeListField(char *name, void *dest, int *lengthDest, size_t size, decodeFun decoder) {
-  FieldDef field = { .type = LIST_FIELD };
-  field.data.LIST_FIELD.decoder = decoder;
-  field.data.LIST_FIELD.dest = dest;
-  field.name = name;
-  field.data.LIST_FIELD.lengthDest = lengthDest;
-  field.data.LIST_FIELD.size = size;
-  return field;
+  return (FieldDef) {
+    .type = LIST_FIELD,
+    .name = name,
+    .data = { .LIST_FIELD = {
+      .dest = dest,
+      .lengthDest = lengthDest, 
+      .size = size,
+      .decoder = decoder,
+    } }
+  };
 }
 
 bool decodeFields(DecoderState *state, int count, ...) {
@@ -159,10 +171,14 @@ bool decodeList(DecoderState *state, void *dest, int *length, size_t size, decod
     state->currentNode = item;
 
     state->error.depth = currentDepth + 1;
-    state->error.path[currentDepth] = (JSONPath) {
+    // state->error.path[currentDepth] = (JSONPath) {
+    //   .tag = JSON_INDEX,
+    //   .data = { .JSON_INDEX = { .index = i } }
+    // };
+    setDecoderPath(&state->error, currentDepth, (JSONPath) {
       .tag = JSON_INDEX,
       .data = { .JSON_INDEX = { .index = i } }
-    };
+    });
 
     bool result = decoder(state, *listDest + (size * i));
     if (!result) {
@@ -203,20 +219,46 @@ DecodeResult decode(char *input, void *dest, decodeFun decoder) {
     return result;
   }
 
+  #define DECODER_ERROR_START_CAPACITY 5
+
   JSONNode *node = parseResult.result.PARSER_SUCCESS.tree;
   DecoderState state = {
     .currentNode = node,
     .error = (DecoderError) {
       .errorMsg = "",
+      .pathCapacity = DECODER_ERROR_START_CAPACITY,
+      .path = calloc(DECODER_ERROR_START_CAPACITY, sizeof(JSONPath))
     }
   };
 
   bool success = decoder(&state, dest);
+
+  if (success) {
+    DecodeError_free(state.error);
+  }
 
   JSONNode_free(node);
 
   result.error = state.error;
   result.success = success;
   return result;
+}
+
+void setDecoderPath(DecoderError *error, int depth, JSONPath jPath) {
+  if (depth > error->pathCapacity) {
+    int newCapacity = error->pathCapacity * 2;
+    JSONPath *newPath = reallocarray(error->path, newCapacity, sizeof(JSONPath)) ;
+    error->path = newPath;
+    error->pathCapacity = newCapacity;
+  }
+
+  JSONPath *ptr = &error->path[depth];
+  *ptr = jPath;
+}
+
+void DecodeError_free(DecoderError error) {
+  if (error.path != NULL) {
+    free(error.path);
+  }
 }
 

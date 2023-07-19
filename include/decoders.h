@@ -16,9 +16,10 @@ typedef struct JSONPath {
 } JSONPath;
 
 typedef struct DecoderError {
-  JSONPath path[DECODER_MAX_DEPTH];
-  char errorMsg[DECODER_ERR_MAX_SIZE];
+  JSONPath *path;
   int depth;
+  int pathCapacity;
+  char errorMsg[DECODER_ERR_MAX_SIZE];
 } DecoderError;
 
 // TODO This takes up a lot of space, could we make it more compact?
@@ -59,7 +60,12 @@ FieldDef makeField(char *name, void *dest, decodeFun decoder);
 FieldDef makeListField(char *name, void *dest, int *lengthDest, size_t size, decodeFun decoder);
 bool decodeFields(DecoderState *state, int count, ...);
 bool decodeList(DecoderState *state, void *dest, int *length, size_t size, decodeFun decoder);
-DecodeResult decode(char *input, void *dest, decodeFun decoder);
 void printDecoderError(DecoderError err);
+void DecodeError_free(DecoderError err);
+
+// Does not take ownerhip of the `input`, caller must deallocate. On success, deallocates the error
+// field. On failure, ownership of the `DecodeError` is transferred to the caller who must
+// deallocate it using `DecodeError_free`.
+DecodeResult decode(char *input, void *dest, decodeFun decoder);
 
 #endif
