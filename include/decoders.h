@@ -4,9 +4,6 @@
 #include <stddef.h>
 #include "parser.h"
 
-#define DECODER_MAX_DEPTH 50
-#define DECODER_ERR_MAX_SIZE 300
-
 typedef struct JSONPath {
   enum { JSON_FIELD, JSON_INDEX } tag;
   union {
@@ -19,7 +16,7 @@ typedef struct DecoderError {
   JSONPath *path;
   int depth;
   int pathCapacity;
-  char errorMsg[DECODER_ERR_MAX_SIZE];
+  char *errorMsg;
 } DecoderError;
 
 // TODO This takes up a lot of space, could we make it more compact?

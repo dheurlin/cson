@@ -10,9 +10,16 @@
 
 void setDecoderPath(DecoderError *error, int depth, JSONPath jPath);
 
+#define allocsprintf(ptr, args...) do {\
+  size_t nbytes = snprintf(NULL, 0, args) + 1;\
+  char *str = malloc(nbytes);\
+  snprintf(str, nbytes, args);\
+  ptr = str;\
+} while(0);
+
 #define FAIL(state, args...) do {\
-    sprintf(state->error.errorMsg, args);\
-    return false;\
+  allocsprintf(state->error.errorMsg, args);\
+  return false;\
 } while(0)
 
 bool decodeInt(DecoderState *state, void *dest) {
@@ -62,14 +69,6 @@ bool decodeField(DecoderState *state, FieldDef field) {
   JSONNode *current = state->currentNode;
   JSONNode *node = findField(current->data.JSON_OBJECT.nodes, field.name);
 
-  if (state->error.depth == DECODER_MAX_DEPTH) {
-    FAIL(state, "Max depth %d exceded", DECODER_MAX_DEPTH);
-  }
-
-  // state->error.path[state->error.depth++] = (JSONPath) {
-  //   .tag = JSON_FIELD,
-  //   .data = { .JSON_FIELD = { .fieldName = field.name } }
-  // };
   setDecoderPath(&state->error, state->error.depth++, (JSONPath) {
     .tag = JSON_FIELD,
     .data = { .JSON_FIELD = { .fieldName = field.name } }
@@ -153,10 +152,6 @@ bool decodeList(DecoderState *state, void *dest, int *length, size_t size, decod
     FAIL(state, "Expecting list, got %s", nodeTagToString(state->currentNode->tag));
   }
 
-  if (state->error.depth + 1 == DECODER_MAX_DEPTH) {
-    FAIL(state, "Max depth %d exceded", DECODER_MAX_DEPTH);
-  }
-
   JSONNode *currentNode = state->currentNode;
   int currentDepth = state->error.depth;
   NodeList *nodeList = currentNode->data.JSON_LIST.nodes;
@@ -171,10 +166,6 @@ bool decodeList(DecoderState *state, void *dest, int *length, size_t size, decod
     state->currentNode = item;
 
     state->error.depth = currentDepth + 1;
-    // state->error.path[currentDepth] = (JSONPath) {
-    //   .tag = JSON_INDEX,
-    //   .data = { .JSON_INDEX = { .index = i } }
-    // };
     setDecoderPath(&state->error, currentDepth, (JSONPath) {
       .tag = JSON_INDEX,
       .data = { .JSON_INDEX = { .index = i } }
@@ -213,9 +204,17 @@ DecodeResult decode(char *input, void *dest, decodeFun decoder) {
   ParserResult parseResult = parse(input);
 
   if (parseResult.status != PARSER_SUCCESS) {
-    sprintf(result.error.errorMsg, "Parsing failed: %s\n", parseResult.result.PARSER_ERROR.errorMsg);
-    result.success = false;
-    result.depth = 0;
+    char *errorMsg;
+    allocsprintf(errorMsg, "Parsing failed: %s", parseResult.result.PARSER_ERROR.errorMsg);
+
+    result = (DecodeResult) {
+      .error = (DecoderError) {
+        .path = NULL,
+        .depth = 0,
+        .errorMsg = errorMsg,
+      },
+      .success = false,
+    };
     return result;
   }
 
@@ -225,7 +224,7 @@ DecodeResult decode(char *input, void *dest, decodeFun decoder) {
   DecoderState state = {
     .currentNode = node,
     .error = (DecoderError) {
-      .errorMsg = "",
+      .errorMsg = NULL,
       .pathCapacity = DECODER_ERROR_START_CAPACITY,
       .path = calloc(DECODER_ERROR_START_CAPACITY, sizeof(JSONPath))
     }
@@ -259,6 +258,9 @@ void setDecoderPath(DecoderError *error, int depth, JSONPath jPath) {
 void DecodeError_free(DecoderError error) {
   if (error.path != NULL) {
     free(error.path);
+  }
+  if (error.errorMsg != NULL) {
+    free(error.errorMsg);
   }
 }
 
