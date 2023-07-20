@@ -58,6 +58,7 @@ FieldDef makeListField(char *name, void *dest, int *lengthDest, size_t size, dec
 bool decodeFields(DecoderState *state, int count, ...);
 bool decodeList(DecoderState *state, void *dest, int *length, size_t size, decodeFun decoder);
 void printDecoderError(DecoderError err);
+char *buildDecoderError(DecoderError err);
 void DecodeError_free(DecoderError err);
 
 // Does not take ownerhip of the `input`, caller must deallocate. On success, deallocates the error

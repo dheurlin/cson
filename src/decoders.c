@@ -7,6 +7,7 @@
 #include "decoders.h"
 #include "parser.h"
 #include "nodelist.h"
+#include "stringbuilder.h"
 
 void setDecoderPath(DecoderError *error, int depth, JSONPath jPath);
 
@@ -181,21 +182,31 @@ bool decodeList(DecoderState *state, void *dest, int *length, size_t size, decod
   return true;
 }
 
-void printDecoderError(DecoderError err) {
-  printf("At root");
+char *buildDecoderError(DecoderError err) {
+  StringBuilder builder = StringBuilder_new();
+
+  StringBuilder_append(&builder, "At root");
   for (int i = 0; i < err.depth; i++) {
     JSONPath path = err.path[i];
     switch (path.tag) {
       case JSON_FIELD:
-        printf("[\"%s\"]", path.data.JSON_FIELD.fieldName);
+        StringBuilder_append(&builder, "[\"%s\"]", path.data.JSON_FIELD.fieldName);
         break;
 
       case JSON_INDEX:
-        printf("[%d]", path.data.JSON_INDEX.index);
+        StringBuilder_append(&builder, "[%d]", path.data.JSON_INDEX.index);
         break;
     }
   }
-  printf(": %s\n", err.errorMsg);
+  StringBuilder_append(&builder, ": %s", err.errorMsg);
+  
+  return StringBuilder_getString(&builder);
+}
+
+void printDecoderError(DecoderError err) {
+  char *errorMsg = buildDecoderError(err);
+  printf("%s\n", errorMsg);
+  free(errorMsg);
 }
 
 DecodeResult decode(char *input, void *dest, decodeFun decoder) {
