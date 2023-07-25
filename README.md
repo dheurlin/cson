@@ -5,7 +5,9 @@ Initially inspired by [Elm's JSON decoders](https://package.elm-lang.org/package
 
 ## TODO
 
-Add config to build as shared library, currently only builds example executables.
+* Add config to build as shared library, currently only builds example executables.
+* Fix various memory issues
+* Support string escape characters in lexer
 
 # Usage
 
