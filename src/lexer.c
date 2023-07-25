@@ -234,35 +234,16 @@ bool lexString(LexerState *state) {
 
 char *tokenTypeToString(TokenType type) {
   switch (type) {
-    case TOKEN_NUMBER_LITERAL:
-      return "Number literal";
-
-    case TOKEN_NULL_LITERAL:
-      return "Null literal";
-
-    case TOKEN_BOOL_LITERAL:
-      return "Boolean literal";
-
-    case TOKEN_STRING_LITERAL:
-      return "String literal";
-
-    case TOKEN_COLON:
-      return ":";
-
-    case TOKEN_COMMA:
-      return ",";
-
-    case TOKEN_OPEN_SQUARE:
-      return "[";
-
-    case TOKEN_CLOSE_SQUARE:
-      return "]";
-
-    case TOKEN_OPEN_CURLY:
-      return "{";
-
-    case TOKEN_CLOSE_CURLY:
-      return "}";
+    case TOKEN_NUMBER_LITERAL: return "Number literal";
+    case TOKEN_NULL_LITERAL: return "Null literal";
+    case TOKEN_BOOL_LITERAL: return "Boolean literal";
+    case TOKEN_STRING_LITERAL: return "String literal";
+    case TOKEN_COLON: return ":";
+    case TOKEN_COMMA: return ",";
+    case TOKEN_OPEN_SQUARE: return "[";
+    case TOKEN_CLOSE_SQUARE: return "]";
+    case TOKEN_OPEN_CURLY: return "{";
+    case TOKEN_CLOSE_CURLY: return "}";
   }
 }
 
