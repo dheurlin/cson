@@ -64,7 +64,8 @@ LexResult lex(char *input);
 
 void printToken(Token *token);
 void printTokenType(TokenType type);
-void sprintTokenType(char *dest, TokenType type);
+// void sprintTokenType(char *dest, TokenType type);
+char *tokenTypeToString(TokenType type);
 #define printTokenLn(token) do { printToken(token); printf("\n"); } while(0);
 
 void TokenList_free(TokenList *list);

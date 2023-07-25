@@ -232,54 +232,42 @@ bool lexString(LexerState *state) {
   return true;
 }
 
-void sprintTokenType(char *dest, TokenType type) {
+char *tokenTypeToString(TokenType type) {
   switch (type) {
     case TOKEN_NUMBER_LITERAL:
-      sprintf(dest, "%s", "Number literal");
-      break;
+      return "Number literal";
 
     case TOKEN_NULL_LITERAL:
-      sprintf(dest, "%s", "Null literal");
-      break;
+      return "Null literal";
 
     case TOKEN_BOOL_LITERAL:
-      sprintf(dest, "%s", "Boolean literal");
-      break;
+      return "Boolean literal";
 
     case TOKEN_STRING_LITERAL:
-      sprintf(dest, "%s", "String literal");
-      break;
+      return "String literal";
 
     case TOKEN_COLON:
-      sprintf(dest, "%s", ":");
-      break;
+      return ":";
 
     case TOKEN_COMMA:
-      sprintf(dest, "%s", ",");
-      break;
+      return ",";
 
     case TOKEN_OPEN_SQUARE:
-      sprintf(dest, "%s", "[");
-      break;
+      return "[";
 
     case TOKEN_CLOSE_SQUARE:
-      sprintf(dest, "%s", "]");
-      break;
+      return "]";
 
     case TOKEN_OPEN_CURLY:
-      sprintf(dest, "%s", "{");
-      break;
+      return "{";
 
     case TOKEN_CLOSE_CURLY:
-      sprintf(dest, "%s", "}");
-      break;
+      return "}";
   }
 }
 
 void printTokenType(TokenType type) {
-  char dest[32];
-  sprintTokenType(dest, type);
-  printf("%s", dest);
+  printf("%s", tokenTypeToString(type));
 }
 
 void printToken(Token *token) {

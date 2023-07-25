@@ -96,9 +96,7 @@ static bool _parse(ParserState *state) {
       break;
 
     default: {
-      char tokenType[32];
-      sprintTokenType(tokenType, next.tokenType);
-      FAIL(state, "Unexpected token at %d:%d: %s", next.row, next.col, tokenType);
+      FAIL(state, "Unexpected token at %d:%d: %s", next.row, next.col, tokenTypeToString(next.tokenType));
     }
   }
 
@@ -213,12 +211,10 @@ Token *nextToken(ParserState *state) {
 bool expect(ParserState *state, TokenType type) {
   Token next = peekToken(state);
   if (eof(state) || peekTokenType(state) != type) {
-    char tokenType[32];
-    sprintTokenType(tokenType, type);
     if (eof(state)) {
-      FAIL(state, "Expecting %s at end of input", tokenType);
+      FAIL(state, "Expecting %s at end of input", tokenTypeToString(type));
     } else {
-      FAIL(state, "Expecting %s at %d:%d", tokenType, next.row, next.col);
+      FAIL(state, "Expecting %s at %d:%d", tokenTypeToString(type), next.row, next.col);
     }
   }
   return true;
