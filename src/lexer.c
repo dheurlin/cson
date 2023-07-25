@@ -30,7 +30,7 @@ LexResult lex(char *input) {
   TokenList list = {
     .length = 0,
     .capacity = TOKEN_START_CAPACITY,
-    .tokens = malloc(TOKEN_START_CAPACITY * sizeof(Token))
+    .tokens = calloc(TOKEN_START_CAPACITY, sizeof(Token))
   };
 
   LexerState state = {

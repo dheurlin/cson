@@ -5,13 +5,13 @@
 #include "parser.h"
 
 NodeList *NodeList_new() {
-  JSONNode *items = malloc(sizeof(JSONNode) * NODELIST_START_CAPACITY);
+  JSONNode *items = calloc(NODELIST_START_CAPACITY, sizeof(JSONNode));
   NodeList list = {
     .items = items,
     .length = 0,
     .capcity = NODELIST_START_CAPACITY
   };
-  NodeList *listPtr = malloc(sizeof(NodeList));
+  NodeList *listPtr = calloc(1, sizeof(NodeList));
   *listPtr = list;
   return listPtr;
 }
