@@ -5,7 +5,7 @@
 char *pointStr =
 "{\n\
   \"x\": 69,\n\
-  \"y\": 420,\n\
+  \"a\": 420,\n\
 }";
 char *personStr = "{\n  \"firstName\": \"Walter\",\n  \"lastName\" : \"White\",\n  \"age\": 52\n}";
 char *numbersStr = "[1, 2, 3, 4, 5]";
@@ -93,12 +93,17 @@ bool decodeFamily(DecoderState *state, void *dest) {
 
 int main() {
   Point decodedPoint;
-  decode(pointStr, &decodedPoint, decodePoint);
+  DecodeResult pointRes = decode(pointStr, &decodedPoint, decodePoint);
 
   printf("Decoded point: \n");
   printf("----------------------------\n");
-  printPoint(decodedPoint);
-  printf("\n");
+  if (pointRes.success) {
+    printPoint(decodedPoint);
+    printf("\n");
+  } else {
+    printDecoderError(pointRes.error);
+    DecodeError_free(pointRes.error);
+  }
 
   // ------------------
 
@@ -137,7 +142,7 @@ int main() {
 
   if(!res.success) {
     printDecoderError(res.error);
-    exit(-1);
+    DecodeError_free(res.error);
   }
 
   printf("Decoded family: \n");
@@ -161,7 +166,6 @@ int main() {
   if (!wrongFamRes.success) {
     printDecoderError(wrongFamRes.error);
     DecodeError_free(wrongFamRes.error);
-    exit(-1);
   }
 
   return 1;
