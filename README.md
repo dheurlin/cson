@@ -1,4 +1,4 @@
-JSON Decoding in C.
+# JSON Decoding in C.
 
 Initially inspired by [Elm's JSON decoders](https://package.elm-lang.org/packages/elm/json/latest/Json.Decode), but ended up a bit different.
 
@@ -133,4 +133,4 @@ At root["children"][1]["age"]: Expecting number, got string
 
 ## More examples
 
-See the [decoder example file](src/decoderTest.c)
+See the [decoder example file](src/decodeTest.c).
