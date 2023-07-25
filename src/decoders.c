@@ -70,14 +70,14 @@ bool decodeField(DecoderState *state, FieldDef field) {
   JSONNode *current = state->currentNode;
   JSONNode *node = findField(current->data.JSON_OBJECT.nodes, field.name);
 
+  if (node == NULL) {
+    FAIL(state, "No field with name \"%s\" was found", field.name);
+  }
+
   setDecoderPath(&state->error, state->error.depth++, (JSONPath) {
     .tag = JSON_FIELD,
     .data = { .JSON_FIELD = { .fieldName = field.name } }
   });
-
-  if (node == NULL) {
-    FAIL(state, "No field with name \"%s\" was found", field.name);
-  }
 
   state->currentNode = node;
 
