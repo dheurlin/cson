@@ -5,7 +5,7 @@
 char *pointStr =
 "{\n\
   \"x\": 69,\n\
-  \"a\": 420,\n\
+  \"y\": 420,\n\
 }";
 char *personStr = "{\n  \"firstName\": \"Walter\",\n  \"lastName\" : \"White\",\n  \"age\": 52\n}";
 char *numbersStr = "[1, 2, 3, 4, 5]";
